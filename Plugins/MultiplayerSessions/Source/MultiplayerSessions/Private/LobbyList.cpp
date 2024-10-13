@@ -36,17 +36,27 @@ void ULobbyList::UpdateLobbyList() {
 	LobbyContainer->ClearChildren();
 
 	for (auto Result : MultiplayerSessionsSubsystem->LastSessionSearch->SearchResults) {
+
 		if (LobbyName) {
 			LobbyNameRef = CreateWidget<ULobbyName>(GetWorld(), LobbyName);
+			if (LobbyNameRef) {
+				GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Blue, "LobbyNameRef");
 
-			LobbyNameRef->LobbyJoinButton->OnClicked.AddDynamic(this, &ULobbyList::JoinClickedSession);
+				LobbyNameRef->LobbyJoinButton->OnClicked.AddDynamic(this, &ULobbyList::JoinClickedSession);
+
+				Username = Result.Session.OwningUserName;
+
+				LobbyNameRef->UpdateLobby(Username);
+
+				LobbyContainer->AddChild(LobbyNameRef);
+			}
+			else {
+				GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Blue, "No LobbyNameRef");
+			}
 		}
-
-		Username = Result.Session.OwningUserName;
-
-		LobbyNameRef->UpdateLobby(Username);
-
-		LobbyContainer->AddChild(LobbyNameRef);
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Blue, "No LobbyName");
+		}
 	}
 }
 

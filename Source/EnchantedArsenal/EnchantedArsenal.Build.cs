@@ -8,7 +8,7 @@ public class EnchantedArsenal : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "MultiplayerSessions", "OnlineSubsystem", "OnlineSubsystemSteam" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
