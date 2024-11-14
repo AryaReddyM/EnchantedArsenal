@@ -60,7 +60,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Look);
 
 		//Binding Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AArsenalCharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 	}
 }
 
@@ -76,9 +76,5 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 
 	AddControllerYawInput(LookAxisVector.X * -0.4F);
 	AddControllerPitchInput(LookAxisVector.Y * 0.4F);
-}
-
-void AArsenalCharacter::Jump() {
-	ACharacter::Jump();
 }
 
