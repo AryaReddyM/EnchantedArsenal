@@ -27,4 +27,6 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	bIsInAir = ArsenalCharacter->GetCharacterMovement()->IsFalling();
 
 	bIsAccelerating = ArsenalCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0 ? true : false;
+
+	bIsCrouching = ArsenalCharacter->GetMovementComponent()->IsCrouching();
 }

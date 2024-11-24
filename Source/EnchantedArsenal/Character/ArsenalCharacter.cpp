@@ -1,22 +1,17 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "ArsenalCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "InputMappingContext.h"
 #include "InputAction.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Components/InputComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
+#include "Net/UnrealNetwork.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
 
-// Sets default values
-AArsenalCharacter::AArsenalCharacter()
-{
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -27,12 +22,15 @@ AArsenalCharacter::AArsenalCharacter()
 	CameraComp->SetupAttachment(SpringArmComp);
 }
 
-// Called when the game starts or when spawned
-void AArsenalCharacter::BeginPlay()
-{
+void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(AArsenalCharacter, OverlappingWeapon, COND_OwnerOnly);
+}
+
+void AArsenalCharacter::BeginPlay() {
 	Super::BeginPlay();
 
-	//Setting Up Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
@@ -40,26 +38,18 @@ void AArsenalCharacter::BeginPlay()
 	}
 }
 
-// Called every frame
-void AArsenalCharacter::Tick(float DeltaTime)
-{
+void AArsenalCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-
 }
 
-// Called to bind functionality to input
-void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
+void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
-		//Binding Movement
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Move);
 
-		//Binding Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Look);
 
-		//Binding Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 	}
 }
@@ -78,3 +68,26 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 	AddControllerPitchInput(LookAxisVector.Y * 0.4F);
 }
 
+void AArsenalCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon) {
+	if (OverlappingWeapon) {
+		OverlappingWeapon->ShowPickupWidget(true);
+	}
+
+	if (LastWeapon) {
+		LastWeapon->ShowPickupWidget(false);
+	}
+}
+
+void AArsenalCharacter::SetOverlappingWeapon(AWeapon* InWeapon) {
+	if (OverlappingWeapon) {
+		OverlappingWeapon->ShowPickupWidget(false);
+	}
+	
+	OverlappingWeapon = InWeapon;
+	
+	if (IsLocallyControlled()) {
+		if (OverlappingWeapon) {
+			OverlappingWeapon->ShowPickupWidget(true);
+		}
+	}
+}
