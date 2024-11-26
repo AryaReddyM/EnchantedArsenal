@@ -9,7 +9,7 @@
 #include "Components/InputComponent.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
 #include "Net/UnrealNetwork.h"
-#include "EnchantedArsenal/Weapon/Weapon.h"
+#include "EnchantedArsenal/Components/CombatComponent.h"
 
 AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -20,12 +20,23 @@ AArsenalCharacter::AArsenalCharacter() {
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera Component"));
 	CameraComp->SetupAttachment(SpringArmComp);
+
+	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
+	CombatComp->SetIsReplicated(true);
 }
 
 void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(AArsenalCharacter, OverlappingWeapon, COND_OwnerOnly);
+}
+
+void AArsenalCharacter::PostInitializeComponents() {
+	Super::PostInitializeComponents();
+
+	if (CombatComp) {
+		CombatComp->Character = this;
+	}
 }
 
 void AArsenalCharacter::BeginPlay() {
@@ -51,6 +62,8 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Look);
 
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		
+		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Started, this, &AArsenalCharacter::Equip);
 	}
 }
 
@@ -66,6 +79,12 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 
 	AddControllerYawInput(LookAxisVector.X * -0.4F);
 	AddControllerPitchInput(LookAxisVector.Y * 0.4F);
+}
+
+void AArsenalCharacter::Equip() {
+	if (CombatComp && HasAuthority()) {
+		CombatComp->EquipWeapon(OverlappingWeapon);
+	}
 }
 
 void AArsenalCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon) {
