@@ -64,6 +64,9 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		
 		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Started, this, &AArsenalCharacter::Equip);
+
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
 	}
 }
 
@@ -82,7 +85,30 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 }
 
 void AArsenalCharacter::Equip() {
-	if (CombatComp && HasAuthority()) {
+	if (CombatComp) {
+		if (HasAuthority()) {
+			CombatComp->EquipWeapon(OverlappingWeapon);
+		}
+		else {
+			ServerEquipButtonPressed();
+		}
+	}
+}
+
+void AArsenalCharacter::Aim() {
+	if (CombatComp) {
+		CombatComp->SetAiming(true);
+	}
+}
+
+void AArsenalCharacter::AimReleased() {
+	if (CombatComp) {
+		CombatComp->SetAiming(false);
+	}
+}
+
+void AArsenalCharacter::ServerEquipButtonPressed_Implementation() {
+	if (CombatComp) {
 		CombatComp->EquipWeapon(OverlappingWeapon);
 	}
 }
@@ -109,4 +135,13 @@ void AArsenalCharacter::SetOverlappingWeapon(AWeapon* InWeapon) {
 			OverlappingWeapon->ShowPickupWidget(true);
 		}
 	}
+}
+
+bool AArsenalCharacter::IsWeaponEquipped() {
+	return (CombatComp && CombatComp->EquippedWeapon);
+}
+
+bool AArsenalCharacter::IsAiming() {
+
+	return (CombatComp && CombatComp->bAiming);
 }

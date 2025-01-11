@@ -22,6 +22,8 @@ class ENCHANTEDARSENAL_API AWeapon : public AActor {
 public:
 	AWeapon();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -40,18 +42,23 @@ protected:
 		int OtherBodyIndex);
 
 private:
+	UFUNCTION()
+	void OnRep_WeaponState();
+	
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class USphereComponent* AreaSphere;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties", ReplicatedUsing = OnRep_WeaponState)
 	EWeaponState WeaponState;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
 
 public:
-	FORCEINLINE void SetWeaponState(EWeaponState InWeaponState) {WeaponState = InWeaponState;}
+	void SetWeaponState(EWeaponState InWeaponState);
+
+	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; };
 };

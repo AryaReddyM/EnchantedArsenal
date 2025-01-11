@@ -1,14 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "ArsenalAnimInstance.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class ENCHANTEDARSENAL_API UArsenalAnimInstance : public UAnimInstance
 {
@@ -32,5 +28,23 @@ private:
 	bool bIsAccelerating;
 	
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	bool bWeaponEquipped;
+	
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bIsCrouching;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	bool bAiming;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	float YawOffset;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	float Lean;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	float Pitch;
+
+	FRotator CharacterRotationLastFrame;
+	FRotator CharacterRotation;
 };

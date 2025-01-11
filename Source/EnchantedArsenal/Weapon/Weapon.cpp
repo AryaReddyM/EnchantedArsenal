@@ -4,6 +4,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "EnchantedArsenal/Character/ArsenalCharacter.h"
+#include "Net/UnrealNetwork.h"
 
 AWeapon::AWeapon() {
 	PrimaryActorTick.bCanEverTick = false;
@@ -24,6 +25,12 @@ AWeapon::AWeapon() {
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(WeaponMesh);
+}
+
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWeapon, WeaponState);
 }
 
 void AWeapon::BeginPlay() {
@@ -65,5 +72,23 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 
 	if (ArsenalCharacter) {
 		ArsenalCharacter->SetOverlappingWeapon(nullptr);
+	}
+}
+
+void AWeapon::OnRep_WeaponState() {
+	switch (WeaponState) {
+	case EWeaponState::EWS_Equipped:
+		ShowPickupWidget(false);
+		break;
+	}
+}
+
+void AWeapon::SetWeaponState(EWeaponState InWeaponState) {
+	WeaponState = InWeaponState;
+	switch (WeaponState) {
+	case EWeaponState::EWS_Equipped:
+		ShowPickupWidget(false);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
 	}
 }

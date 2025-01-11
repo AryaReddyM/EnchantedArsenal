@@ -13,6 +13,8 @@ class ENCHANTEDARSENAL_API UCombatComponent : public UActorComponent {
 
 public:
 	UCombatComponent();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	friend AArsenalCharacter;
 protected:
@@ -23,7 +25,22 @@ public:
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 
+	void SetAiming(bool bInAiming);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetAiming(bool bInAiming);
+
 private:
 	AArsenalCharacter* Character;
+
+	UPROPERTY(Replicated)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(Replicated)
+	bool bAiming;
+
+	UPROPERTY(EditAnywhere)
+	float BaseWalkSpeed = 600.0f;
+	UPROPERTY(EditAnywhere)
+	float AimWalkSpeed = 450.0f;
 };

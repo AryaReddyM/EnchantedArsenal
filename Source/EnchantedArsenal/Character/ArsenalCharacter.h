@@ -27,8 +27,17 @@ public:
 	void Move(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 	void Equip();
+	void Aim();
+	void AimReleased();
 
-private:
+public:
+	UFUNCTION(Server, Reliable)
+	void ServerEquipButtonPressed();
+	
+	UFUNCTION()
+	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SpringArmComp;
 
@@ -62,12 +71,22 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipAction;
 
-	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
-	class AWeapon* OverlappingWeapon;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AimAction;
 
-	UFUNCTION()
-	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
+	AWeapon* OverlappingWeapon;
+
+	float AO_Yaw;
+	float AO_Pitch;
 
 public:
 	void SetOverlappingWeapon(AWeapon* InWeapon);
+
+	bool IsWeaponEquipped();
+
+	bool IsAiming();
+
+	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = true))
+	float IdleWalkRunInterpSpeed;
 };
