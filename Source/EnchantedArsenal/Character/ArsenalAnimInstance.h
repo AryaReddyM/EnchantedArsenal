@@ -29,6 +29,8 @@ private:
 	
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bWeaponEquipped;
+
+	class AWeapon* EquippedWeapon;
 	
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bIsCrouching;
@@ -44,6 +46,9 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	float Pitch;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	FTransform LeftHandTransform;
 
 	FRotator CharacterRotationLastFrame;
 	FRotator CharacterRotation;

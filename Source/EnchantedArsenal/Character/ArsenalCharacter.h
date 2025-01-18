@@ -87,6 +87,8 @@ public:
 
 	bool IsAiming();
 
+	AWeapon* GetEquippedWeapon();
+
 	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = true))
 	float IdleWalkRunInterpSpeed;
 };

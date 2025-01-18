@@ -145,3 +145,9 @@ bool AArsenalCharacter::IsAiming() {
 
 	return (CombatComp && CombatComp->bAiming);
 }
+
+AWeapon* AArsenalCharacter::GetEquippedWeapon() {
+	if (CombatComp == nullptr) return nullptr;
+
+	return CombatComp->EquippedWeapon;
+}

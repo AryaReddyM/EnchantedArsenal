@@ -2,6 +2,7 @@
 #include "ArsenalCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
 
 void UArsenalAnimInstance::NativeInitializeAnimation() {
 	Super::NativeInitializeAnimation();
@@ -25,6 +26,7 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	bIsCrouching = ArsenalCharacter->GetMovementComponent()->IsCrouching();
 
 	bWeaponEquipped = ArsenalCharacter->IsWeaponEquipped();
+	EquippedWeapon = ArsenalCharacter->GetEquippedWeapon();
 
 	bAiming = ArsenalCharacter->IsAiming();
 
@@ -59,5 +61,15 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	Pitch = ArsenalCharacter->GetBaseAimRotation().Pitch;
 	if (Pitch >= 180.0f) {
 		Pitch -= 360.0f;
+	}
+
+	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && ArsenalCharacter->GetMesh()) {
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"));
+		FVector OutPosition;
+		FRotator OutRotation;
+
+		ArsenalCharacter->GetMesh()->TransformToBoneSpace(FName("Hand_R"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
+		LeftHandTransform.SetLocation(OutPosition);
+		LeftHandTransform.SetRotation(FQuat(OutRotation));
 	}
 }
