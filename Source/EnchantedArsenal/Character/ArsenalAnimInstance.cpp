@@ -26,7 +26,7 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	bIsCrouching = ArsenalCharacter->GetMovementComponent()->IsCrouching();
 
 	bWeaponEquipped = ArsenalCharacter->IsWeaponEquipped();
-	EquippedWeapon = ArsenalCharacter->GetEquippedWeapon();
+	EquippedWeapon = ArsenalCharacter->GetWeapon();
 
 	bAiming = ArsenalCharacter->IsAiming();
 

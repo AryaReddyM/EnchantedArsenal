@@ -7,7 +7,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Components/InputComponent.h"
-#include "EnchantedArsenal/Weapon/Weapon.h"
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
 
@@ -29,8 +28,6 @@ AArsenalCharacter::AArsenalCharacter() {
 
 void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME_CONDITION(AArsenalCharacter, OverlappingWeapon, COND_OwnerOnly);
 }
 
 void AArsenalCharacter::PostInitializeComponents() {
@@ -65,7 +62,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		
-		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Started, this, &AArsenalCharacter::Equip);
+		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipRifle);
 
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
@@ -86,13 +83,13 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 	AddControllerPitchInput(LookAxisVector.Y * 0.4F);
 }
 
-void AArsenalCharacter::Equip() {
+void AArsenalCharacter::EquipRifle() {
 	if (CombatComp) {
 		if (HasAuthority()) {
-			CombatComp->EquipWeapon(OverlappingWeapon);
+			CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
 		}
 		else {
-			ServerEquipButtonPressed();
+			ServerEquipRifle();
 		}
 	}
 }
@@ -109,38 +106,14 @@ void AArsenalCharacter::AimReleased() {
 	}
 }
 
-void AArsenalCharacter::ServerEquipButtonPressed_Implementation() {
+void AArsenalCharacter::ServerEquipRifle_Implementation() {
 	if (CombatComp) {
-		CombatComp->EquipWeapon(OverlappingWeapon);
-	}
-}
-
-void AArsenalCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon) {
-	if (OverlappingWeapon) {
-		OverlappingWeapon->ShowPickupWidget(true);
-	}
-
-	if (LastWeapon) {
-		LastWeapon->ShowPickupWidget(false);
-	}
-}
-
-void AArsenalCharacter::SetOverlappingWeapon(AWeapon* InWeapon) {
-	if (OverlappingWeapon) {
-		OverlappingWeapon->ShowPickupWidget(false);
-	}
-	
-	OverlappingWeapon = InWeapon;
-	
-	if (IsLocallyControlled()) {
-		if (OverlappingWeapon) {
-			OverlappingWeapon->ShowPickupWidget(true);
-		}
+		CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
 	}
 }
 
 bool AArsenalCharacter::IsWeaponEquipped() {
-	return (CombatComp && CombatComp->EquippedWeapon);
+	return (CombatComp && CombatComp->SpawnedWeapon);
 }
 
 bool AArsenalCharacter::IsAiming() {
@@ -148,8 +121,8 @@ bool AArsenalCharacter::IsAiming() {
 	return (CombatComp && CombatComp->bAiming);
 }
 
-AWeapon* AArsenalCharacter::GetEquippedWeapon() {
+AWeapon* AArsenalCharacter::GetWeapon() {
 	if (CombatComp == nullptr) return nullptr;
 
-	return CombatComp->EquippedWeapon;
+	return CombatComp->SpawnedWeapon;
 }

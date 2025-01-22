@@ -6,13 +6,17 @@
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetWeaponMesh);
+
 UENUM(BlueprintType)
-enum class EWeaponState : uint8 {
-	EWS_Initial UMETA(DisplayName = "Initial State"),
-	EWS_Equipped UMETA(DisplayName = "Equipped"),
-	EWS_Dropped UMETA(DisplayName = "Dropped"),
+enum class EWeaponType : uint8 {
+	EWT_Initial UMETA(DisplayName = "Initial Type"),
+	EWT_Unequipped UMETA(DisplayName = "Unequipped"),
+	EWT_Rifle UMETA(DisplayName = "Rifle"),
+	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
+	EWT_Pistol UMETA(DisplayName = "Pistol"),
 	
-	EWS_MAX UMETA(DisplayName = "DefaultMax")
+	EWT_MAX UMETA(DisplayName = "DefaultMax")
 };
 
 UCLASS()
@@ -30,36 +34,18 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	void ShowPickupWidget(bool bShowWidget);
-	
 protected:
-	UFUNCTION()
-	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-		int OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-		int OtherBodyIndex);
-
-private:
-	UFUNCTION()
-	void OnRep_WeaponState();
-	
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	class USphereComponent* AreaSphere;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties", Replicated)
+	EWeaponType WeaponType;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties", ReplicatedUsing = OnRep_WeaponState)
-	EWeaponState WeaponState;
-
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	class UWidgetComponent* PickupWidget;
+	UPROPERTY(BlueprintAssignable)
+	FSetWeaponMesh SetWeaponMesh;
 
 public:
-	void SetWeaponState(EWeaponState InWeaponState);
+	void SetWeaponType(EWeaponType InWeaponState);
 
-	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh;  }
 };

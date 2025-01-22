@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
 #include "ArsenalCharacter.generated.h"
 
 UCLASS()
@@ -26,17 +27,13 @@ public:
 
 	void Move(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
-	void Equip();
+	void EquipRifle();
 	void Aim();
 	void AimReleased();
 
 public:
 	UFUNCTION(Server, Reliable)
-	void ServerEquipButtonPressed();
-	
-	UFUNCTION()
-	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
-
+	void ServerEquipRifle();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SpringArmComp;
@@ -74,20 +71,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
 
-	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
-	AWeapon* OverlappingWeapon;
-
 	float AO_Yaw;
 	float AO_Pitch;
 
 public:
-	void SetOverlappingWeapon(AWeapon* InWeapon);
-
 	bool IsWeaponEquipped();
 
 	bool IsAiming();
 
-	AWeapon* GetEquippedWeapon();
+	AWeapon* GetWeapon();
 
 	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = true))
 	float IdleWalkRunInterpSpeed;

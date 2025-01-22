@@ -2,9 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
 #include "CombatComponent.generated.h"
 
-class AWeapon;
 class AArsenalCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -23,7 +23,7 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void EquipWeapon(EWeaponType WeaponType);
 
 	void SetAiming(bool bInAiming);
 
@@ -35,6 +35,12 @@ private:
 
 	UPROPERTY(Replicated)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(Replicated)
+	AWeapon* SpawnedWeapon;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> Weapon;
 
 	UPROPERTY(Replicated)
 	bool bAiming;
