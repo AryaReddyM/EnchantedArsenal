@@ -9,6 +9,7 @@
 #include "Components/InputComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
+#include "ArsenalAnimInstance.h"
 
 AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -62,10 +63,13 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		
-		EnhancedInputComponent->BindAction(EquipAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipRifle);
+		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipRifle);
 
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
+
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Shoot);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AArsenalCharacter::ShootReleased);
 	}
 }
 
@@ -94,6 +98,12 @@ void AArsenalCharacter::EquipRifle() {
 	}
 }
 
+void AArsenalCharacter::ServerEquipRifle_Implementation() {
+	if (CombatComp) {
+		CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
+	}
+}
+
 void AArsenalCharacter::Aim() {
 	if (CombatComp) {
 		CombatComp->SetAiming(true);
@@ -106,9 +116,15 @@ void AArsenalCharacter::AimReleased() {
 	}
 }
 
-void AArsenalCharacter::ServerEquipRifle_Implementation() {
+void AArsenalCharacter::Shoot() {
 	if (CombatComp) {
-		CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
+		CombatComp->Shoot(true);
+	}
+}
+
+void AArsenalCharacter::ShootReleased() {
+	if (CombatComp) {
+		CombatComp->Shoot(false);
 	}
 }
 
@@ -125,4 +141,21 @@ AWeapon* AArsenalCharacter::GetWeapon() {
 	if (CombatComp == nullptr) return nullptr;
 
 	return CombatComp->SpawnedWeapon;
+}
+
+void AArsenalCharacter::PlayShootMontage(bool bAiming) {
+	if (CombatComp == nullptr || CombatComp->SpawnedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && ShootWeaponMontage) {
+
+		FName SectionName;
+		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+
+		if (!AnimInstance->Montage_IsPlaying(ShootWeaponMontage)) {
+			AnimInstance->Montage_Play(ShootWeaponMontage);
+			AnimInstance->Montage_JumpToSection(SectionName);
+		}
+	}
 }

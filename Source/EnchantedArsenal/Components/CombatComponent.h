@@ -5,6 +5,8 @@
 #include "EnchantedArsenal/Weapon/Weapon.h"
 #include "CombatComponent.generated.h"
 
+#define TRACE_LENGTH 80000;
+
 class AArsenalCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -26,15 +28,20 @@ public:
 	void EquipWeapon(EWeaponType WeaponType);
 
 	void SetAiming(bool bInAiming);
-
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bInAiming);
+	
+
+	void Shoot(bool bTriggered);
+	UFUNCTION(Server, Reliable)
+	void ServerShoot();
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiShoot();
+
+	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
 private:
 	AArsenalCharacter* Character;
-
-	UPROPERTY(Replicated)
-	AWeapon* EquippedWeapon;
 
 	UPROPERTY(Replicated)
 	AWeapon* SpawnedWeapon;
@@ -49,4 +56,8 @@ private:
 	float BaseWalkSpeed = 600.0f;
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed = 450.0f;
+
+	bool bShootButtonPressed;
+
+	FVector HitTarget;
 };

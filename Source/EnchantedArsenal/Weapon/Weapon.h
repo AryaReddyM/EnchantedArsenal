@@ -11,7 +11,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetWeaponMesh);
 UENUM(BlueprintType)
 enum class EWeaponType : uint8 {
 	EWT_Initial UMETA(DisplayName = "Initial Type"),
-	EWT_Unequipped UMETA(DisplayName = "Unequipped"),
 	EWT_Rifle UMETA(DisplayName = "Rifle"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_Pistol UMETA(DisplayName = "Pistol"),
@@ -33,6 +32,8 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+	
+	virtual void Shoot(const FVector& HitTarget);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")

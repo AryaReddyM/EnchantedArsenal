@@ -28,12 +28,12 @@ public:
 	void Move(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 	void EquipRifle();
-	void Aim();
-	void AimReleased();
-
-public:
 	UFUNCTION(Server, Reliable)
 	void ServerEquipRifle();
+	void Aim();
+	void AimReleased();
+	void Shoot();
+	void ShootReleased();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SpringArmComp;
@@ -66,13 +66,19 @@ public:
 	UInputAction* JumpAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* EquipAction;
+	UInputAction* EquipRifleAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ShootAction;
+
 	float AO_Yaw;
 	float AO_Pitch;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* ShootWeaponMontage;
 
 public:
 	bool IsWeaponEquipped();
@@ -80,6 +86,8 @@ public:
 	bool IsAiming();
 
 	AWeapon* GetWeapon();
+
+	void PlayShootMontage(bool bAiming);
 
 	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = true))
 	float IdleWalkRunInterpSpeed;
