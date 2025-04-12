@@ -8,6 +8,8 @@
 #define TRACE_LENGTH 80000;
 
 class AArsenalCharacter;
+class AArsenalPlayerController;
+class AArsenalHUD;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENCHANTEDARSENAL_API UCombatComponent : public UActorComponent {
@@ -34,14 +36,18 @@ public:
 
 	void Shoot(bool bTriggered);
 	UFUNCTION(Server, Reliable)
-	void ServerShoot();
+	void ServerShoot(const FVector_NetQuantize& TraceHitTarget);
 	UFUNCTION(NetMulticast, Reliable)
-	void MultiShoot();
+	void MultiShoot(const FVector_NetQuantize& TraceHitTarget);
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
+	
+	void SetHUDCrosshairs(float DeltaTime);
 
 private:
 	AArsenalCharacter* Character;
+	AArsenalPlayerController* PlayerController;
+	AArsenalHUD* HUD;
 
 	UPROPERTY(Replicated)
 	AWeapon* SpawnedWeapon;
@@ -58,6 +64,4 @@ private:
 	float AimWalkSpeed = 450.0f;
 
 	bool bShootButtonPressed;
-
-	FVector HitTarget;
 };

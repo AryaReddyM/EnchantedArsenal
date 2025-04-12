@@ -30,8 +30,15 @@ void AWeapon::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 }
 
-void AWeapon::Shoot(const FVector& HitTarget) {
+void AWeapon::Shoot(const FVector HitTarget) {
 
+}
+
+void AWeapon::StartShoot(const FVector& HitTarget) {
+
+}
+
+void AWeapon::StopShoot() {
 }
 
 void AWeapon::SetWeaponType(EWeaponType InWeaponType) {

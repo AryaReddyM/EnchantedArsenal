@@ -6,6 +6,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "EnchantedArsenal/PlayerController/ArsenalPlayerController.h"
+#include "EnchantedArsenal/HUD/ArsenalHUD.h"
 
 UCombatComponent::UCombatComponent() {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -29,8 +31,7 @@ void UCombatComponent::BeginPlay() {
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	FHitResult HitResult;
-	TraceUnderCrosshairs(HitResult);
+	SetHUDCrosshairs(DeltaTime);
 }
 
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
@@ -74,20 +75,22 @@ void UCombatComponent::Shoot(bool bTriggered) {
 	bShootButtonPressed = bTriggered;
 	
 	if (bShootButtonPressed) {
-		ServerShoot();
+		FHitResult HitResult;
+		TraceUnderCrosshairs(HitResult);
+		ServerShoot(HitResult.ImpactPoint);
 	}
 }
 
-void UCombatComponent::ServerShoot_Implementation() {
-	MultiShoot();
+void UCombatComponent::ServerShoot_Implementation(const FVector_NetQuantize& TraceHitTarget) {
+	MultiShoot(TraceHitTarget);
 }
 
-void UCombatComponent::MultiShoot_Implementation() {
+void UCombatComponent::MultiShoot_Implementation(const FVector_NetQuantize& TraceHitTarget) {
 	if (SpawnedWeapon == nullptr) return;
 
 	if (Character) {
 		Character->PlayShootMontage(bAiming);
-		SpawnedWeapon->Shoot(HitTarget);
+		SpawnedWeapon->StartShoot(TraceHitTarget);
 	}
 }
 
@@ -108,13 +111,42 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
 
 		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECollisionChannel::ECC_Visibility);
 
-		if (!TraceHitResult.bBlockingHit) {
+		if (!TraceHitResult.bBlockingHit)
+		{
 			TraceHitResult.ImpactPoint = End;
-			HitTarget = End;
 		}
-		else {
-			HitTarget = TraceHitResult.ImpactPoint;
-			DrawDebugSphere(GetWorld(), TraceHitResult.ImpactPoint, 12.0f, 12, FColor::Blue);
+
+		DrawDebugSphere(GetWorld(), TraceHitResult.ImpactPoint, 12.0f, 12, FColor::Blue);
+	}
+}
+
+void UCombatComponent::SetHUDCrosshairs(float DeltaTime) {
+	if (Character == nullptr || Character->Controller) return;
+
+	PlayerController = PlayerController == nullptr ? Cast<AArsenalPlayerController>(Character->Controller) : PlayerController;
+
+	if (PlayerController) {
+		HUD = HUD == nullptr ? Cast<AArsenalHUD>(PlayerController->GetHUD()) : HUD;
+
+		if (HUD) {
+			FHUDPackage HUDPackage;
+
+			if (SpawnedWeapon) {
+				HUDPackage.CrosshairsCenter = SpawnedWeapon->CrosshairsCenter;
+				HUDPackage.CrosshairsRight = SpawnedWeapon->CrosshairsRight;
+				HUDPackage.CrosshairsLeft = SpawnedWeapon->CrosshairsLeft;
+				HUDPackage.CrosshairsUp = SpawnedWeapon->CrosshairsUp;
+				HUDPackage.CrosshairsDown = SpawnedWeapon->CrosshairsDown;
+			}
+			else {
+				HUDPackage.CrosshairsCenter = nullptr;
+				HUDPackage.CrosshairsRight = nullptr;
+				HUDPackage.CrosshairsLeft = nullptr;
+				HUDPackage.CrosshairsUp = nullptr;
+				HUDPackage.CrosshairsDown = nullptr;
+			}
+
+			HUD->SetHUDPackage(HUDPackage);
 		}
 	}
 }

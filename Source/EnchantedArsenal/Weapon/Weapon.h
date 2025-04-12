@@ -1,10 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
+
+class UTexture2D;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetWeaponMesh);
 
@@ -33,7 +33,9 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 	
-	virtual void Shoot(const FVector& HitTarget);
+	virtual void Shoot(const FVector HitTarget); 
+	virtual void StartShoot(const FVector& HitTarget);
+	virtual void StopShoot();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
@@ -49,4 +51,15 @@ public:
 	void SetWeaponType(EWeaponType InWeaponState);
 
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh;  }
+
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsCenter;
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsRight;
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsLeft;
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsUp;
+	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UTexture2D* CrosshairsDown;
 };

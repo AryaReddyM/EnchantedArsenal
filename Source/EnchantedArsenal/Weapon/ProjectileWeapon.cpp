@@ -1,25 +1,39 @@
 #include "ProjectileWeapon.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Projectile.h"
+#include "TimerManager.h"
 
-void AProjectileWeapon::Shoot(const FVector& HitTarget) {
-	Super::Shoot(HitTarget);
+void AProjectileWeapon::Shoot(const FVector HitTarget) {
+    Super::Shoot(HitTarget);
 
-	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
-	APawn* InstigatorPawn = Cast<APawn>(GetOwner());
+    if (!HasAuthority()) return;
 
-	if (MuzzleFlashSocket) {
-		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+    const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
+    APawn* InstigatorPawn = Cast<APawn>(GetOwner());
 
-		if (ProjectileClass && InstigatorPawn) {
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = GetOwner();
-			SpawnParams.Instigator = InstigatorPawn;
+    if (MuzzleFlashSocket) {
+        FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 
-			FVector ToTarget = HitTarget - SocketTransform.GetLocation();
-			FRotator TargetRotation = ToTarget.Rotation();
+        if (ProjectileClass && InstigatorPawn) {
+            FActorSpawnParameters SpawnParams;
+            SpawnParams.Owner = GetOwner();
+            SpawnParams.Instigator = InstigatorPawn;
 
-			GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
-		}
-	}
+            FVector ToTarget = (HitTarget - SocketTransform.GetLocation());
+            FRotator TargetRotation = ToTarget.Rotation();
+
+            GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
+        }
+    }
+}
+
+void AProjectileWeapon::StartShoot(const FVector& HitTarget) {
+    Super::StartShoot(HitTarget);
+
+    if (!HasAuthority()) return;
+
+    if (!GetWorld()->GetTimerManager().IsTimerActive(ShootTimerHandle)) {
+        FTimerDelegate ShootTimerDelegate = FTimerDelegate::CreateUObject(this, &AProjectileWeapon::Shoot, HitTarget);
+        GetWorld()->GetTimerManager().SetTimer(ShootTimerHandle, ShootTimerDelegate, ShootRate, false);
+    }
 }
