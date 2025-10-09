@@ -30,6 +30,8 @@ class ENCHANTEDARSENAL_API AArsenalHUD : public AHUD
 public:
 	virtual void DrawHUD() override;
 
+	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter);
+
 private:
 	FHUDPackage HUDPackage;
 

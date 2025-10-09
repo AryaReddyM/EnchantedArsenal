@@ -13,7 +13,7 @@ void AProjectileWeapon::Shoot(const FVector HitTarget) {
 
     if (MuzzleFlashSocket) {
         FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-
+        
         if (ProjectileClass && InstigatorPawn) {
             FActorSpawnParameters SpawnParams;
             SpawnParams.Owner = GetOwner();

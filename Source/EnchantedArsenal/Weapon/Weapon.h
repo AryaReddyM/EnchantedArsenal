@@ -35,7 +35,6 @@ public:
 	
 	virtual void Shoot(const FVector HitTarget); 
 	virtual void StartShoot(const FVector& HitTarget);
-	virtual void StopShoot();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")

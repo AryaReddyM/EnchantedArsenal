@@ -38,9 +38,6 @@ void AWeapon::StartShoot(const FVector& HitTarget) {
 
 }
 
-void AWeapon::StopShoot() {
-}
-
 void AWeapon::SetWeaponType(EWeaponType InWeaponType) {
 	WeaponType = InWeaponType;
 	SetWeaponMesh.Broadcast();

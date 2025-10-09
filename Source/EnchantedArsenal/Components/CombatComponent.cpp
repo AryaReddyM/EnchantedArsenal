@@ -115,17 +115,16 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
 		{
 			TraceHitResult.ImpactPoint = End;
 		}
-
-		DrawDebugSphere(GetWorld(), TraceHitResult.ImpactPoint, 12.0f, 12, FColor::Blue);
 	}
 }
 
 void UCombatComponent::SetHUDCrosshairs(float DeltaTime) {
-	if (Character == nullptr || Character->Controller) return;
+	if (Character == nullptr ) return;
 
 	PlayerController = PlayerController == nullptr ? Cast<AArsenalPlayerController>(Character->Controller) : PlayerController;
 
 	if (PlayerController) {
+
 		HUD = HUD == nullptr ? Cast<AArsenalHUD>(PlayerController->GetHUD()) : HUD;
 
 		if (HUD) {

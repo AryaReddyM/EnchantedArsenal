@@ -74,9 +74,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ShootAction;
 
-	float AO_Yaw;
-	float AO_Pitch;
-
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* ShootWeaponMontage;
 
