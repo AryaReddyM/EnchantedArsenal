@@ -6,11 +6,11 @@
 #include "ArsenalCharacter.generated.h"
 
 UCLASS()
-class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter
-{
+class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter {
 	GENERATED_BODY()
 
 public:
+	////////////////////////////////////// Initalize Functions //////////////////////////////////////
 	AArsenalCharacter();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -34,7 +34,19 @@ public:
 	void AimReleased();
 	void Shoot();
 	void ShootReleased();
-	
+
+	bool IsWeaponEquipped();
+
+	bool IsAiming();
+
+	AWeapon* GetWeapon();
+
+	void PlayShootMontage(bool bAiming);
+
+	UFUNCTION()
+	void HandleDeath();
+
+	////////////////////////////////////// Initalize Variables //////////////////////////////////////
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SpringArmComp;
 
@@ -52,6 +64,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* CombatComp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UHealthComponent* HealthComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -77,15 +92,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* ShootWeaponMontage;
 
-public:
-	bool IsWeaponEquipped();
-
-	bool IsAiming();
-
-	AWeapon* GetWeapon();
-
-	void PlayShootMontage(bool bAiming);
-
-	UPROPERTY(EditAnywhere, Category = Movement, meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere, Category = Movement)
 	float IdleWalkRunInterpSpeed;
+
+	UPROPERTY(EditAnywhere, Category = Health)
+	float MaxHealth = 100;
 };

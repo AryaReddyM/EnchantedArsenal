@@ -9,6 +9,7 @@
 #include "Components/InputComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
+#include "EnchantedArsenal/Components/HealthComponent.h"
 #include "ArsenalAnimInstance.h"
 
 AArsenalCharacter::AArsenalCharacter() {
@@ -25,6 +26,9 @@ AArsenalCharacter::AArsenalCharacter() {
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 	CombatComp->SetIsReplicated(true);
+
+	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("Health Component"));
+	HealthComp->SetIsReplicated(true);
 }
 
 void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
@@ -37,6 +41,11 @@ void AArsenalCharacter::PostInitializeComponents() {
 	if (CombatComp) {
 		CombatComp->Character = this;
 	}
+
+	if (HealthComp) {
+		HealthComp->MaxHealth = MaxHealth;
+		HealthComp->CurrentHealth = MaxHealth;
+	}
 }
 
 void AArsenalCharacter::BeginPlay() {
@@ -47,6 +56,8 @@ void AArsenalCharacter::BeginPlay() {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	HealthComp->OnDeath.AddDynamic(this, &AArsenalCharacter::HandleDeath);
 }
 
 void AArsenalCharacter::Tick(float DeltaTime) {
@@ -158,4 +169,8 @@ void AArsenalCharacter::PlayShootMontage(bool bAiming) {
 			AnimInstance->Montage_JumpToSection(SectionName);
 		}
 	}
+}
+
+void AArsenalCharacter::HandleDeath() {
+	Destroy();
 }
