@@ -13,6 +13,11 @@ class ENCHANTEDARSENAL_API AHitscanWeapon : public AWeapon {
 public:
 	virtual void Shoot() override;
 	virtual void StartShoot() override;
+	UFUNCTION(Server, Reliable)
+	void ServerShoot(const FVector_NetQuantize& TraceEnd);
+
+	void ServerProcessShot(const FVector& TraceStart, const FVector& TraceEnd);
+	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd);
 
 protected:
 	FTimerHandle ShootTimerHandle;
