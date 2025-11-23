@@ -2,14 +2,15 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Projectile.h"
 #include "TimerManager.h"
+#include "EnchantedArsenal/Character/ArsenalCharacter.h"
 
-void AProjectileWeapon::Shoot(const FVector HitTarget) {
-    Super::Shoot(HitTarget);
+void AProjectileWeapon::Shoot() {
+    Super::Shoot();
 
     if (!HasAuthority()) return;
 
     const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
-    APawn* InstigatorPawn = Cast<APawn>(GetOwner());
+    AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
 
     if (MuzzleFlashSocket) {
         FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
@@ -19,7 +20,10 @@ void AProjectileWeapon::Shoot(const FVector HitTarget) {
             SpawnParams.Owner = GetOwner();
             SpawnParams.Instigator = InstigatorPawn;
 
-            FVector ToTarget = (HitTarget - SocketTransform.GetLocation());
+            FHitResult CrosshairHitResult;
+            InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
+
+            FVector ToTarget = (CrosshairHitResult.ImpactPoint - SocketTransform.GetLocation());
             FRotator TargetRotation = ToTarget.Rotation();
 
             GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
@@ -27,13 +31,13 @@ void AProjectileWeapon::Shoot(const FVector HitTarget) {
     }
 }
 
-void AProjectileWeapon::StartShoot(const FVector& HitTarget) {
-    Super::StartShoot(HitTarget);
+void AProjectileWeapon::StartShoot() {
+    Super::StartShoot();
 
     if (!HasAuthority()) return;
 
     if (!GetWorld()->GetTimerManager().IsTimerActive(ShootTimerHandle)) {
-        FTimerDelegate ShootTimerDelegate = FTimerDelegate::CreateUObject(this, &AProjectileWeapon::Shoot, HitTarget);
+        FTimerDelegate ShootTimerDelegate = FTimerDelegate::CreateUObject(this, &AProjectileWeapon::Shoot);
         GetWorld()->GetTimerManager().SetTimer(ShootTimerHandle, ShootTimerDelegate, ShootRate, false);
     }
 }

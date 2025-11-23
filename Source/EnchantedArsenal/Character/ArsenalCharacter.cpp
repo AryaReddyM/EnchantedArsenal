@@ -1,6 +1,6 @@
 #include "ArsenalCharacter.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "InputAction.h"
@@ -8,15 +8,14 @@
 #include "EnhancedInputComponent.h"
 #include "Components/InputComponent.h"
 #include "Net/UnrealNetwork.h"
-#include "EnchantedArsenal/Components/CombatComponent.h"
 #include "EnchantedArsenal/Components/HealthComponent.h"
 #include "ArsenalAnimInstance.h"
 
 AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
-	NetUpdateFrequency = 66.0f;
-	MinNetUpdateFrequency = 33.0f;
+	SetNetUpdateFrequency(66.0f);
+	SetMinNetUpdateFrequency(33.0f);
 
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Component"));
 	SpringArmComp->SetupAttachment(CapsuleComp);
@@ -116,13 +115,13 @@ void AArsenalCharacter::ServerEquipRifle_Implementation() {
 }
 
 void AArsenalCharacter::Aim() {
-	if (CombatComp) {
+	if (CombatComp && CombatComp->SpawnedWeapon) {
 		CombatComp->SetAiming(true);
 	}
 }
 
 void AArsenalCharacter::AimReleased() {
-	if (CombatComp) {
+	if (CombatComp && CombatComp->SpawnedWeapon) {
 		CombatComp->SetAiming(false);
 	}
 }
@@ -174,3 +173,4 @@ void AArsenalCharacter::PlayShootMontage(bool bAiming) {
 void AArsenalCharacter::HandleDeath() {
 	Destroy();
 }
+

@@ -6,7 +6,7 @@ void AArsenalHUD::DrawHUD() {
 	FVector2D ViewportSize;
 	GEngine->GameViewport->GetViewportSize(ViewportSize);
 
-	const FVector2D ViewportCenter = { ViewportSize.X / 2.0F, ViewportSize.Y / 2.0F };
+	const FVector2D ViewportCenter = { ViewportSize.X * 0.5f, ViewportSize.Y * 0.5 };
 
 	if (HUDPackage.CrosshairsCenter) {
 		DrawCrosshair(HUDPackage.CrosshairsCenter, ViewportCenter);

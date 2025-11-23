@@ -33,8 +33,8 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 	
-	virtual void Shoot(const FVector HitTarget); 
-	virtual void StartShoot(const FVector& HitTarget);
+	virtual void Shoot(); 
+	virtual void StartShoot();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")

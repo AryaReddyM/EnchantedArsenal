@@ -36,9 +36,9 @@ public:
 
 	void Shoot(bool bTriggered);
 	UFUNCTION(Server, Reliable)
-	void ServerShoot(const FVector_NetQuantize& TraceHitTarget);
+	void ServerShoot();
 	UFUNCTION(NetMulticast, Reliable)
-	void MultiShoot(const FVector_NetQuantize& TraceHitTarget);
+	void MultiShoot();
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 	

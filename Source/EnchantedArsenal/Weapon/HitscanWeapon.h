@@ -2,11 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "Weapon.h"
-#include "Engine/TimerHandle.h"
-#include "ProjectileWeapon.generated.h"
+#include "HitscanWeapon.generated.h"
+
+class USoundCue;
 
 UCLASS()
-class ENCHANTEDARSENAL_API AProjectileWeapon : public AWeapon {
+class ENCHANTEDARSENAL_API AHitscanWeapon : public AWeapon {
 	GENERATED_BODY()
 
 public:
@@ -14,11 +15,14 @@ public:
 	virtual void StartShoot() override;
 
 protected:
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AProjectile> ProjectileClass;
-
 	FTimerHandle ShootTimerHandle;
 
 	UPROPERTY(EditAnywhere)
 	float ShootRate;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ImpactParticles;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ImpactSound;
 };

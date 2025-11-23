@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
+#include "EnchantedArsenal/Components/CombatComponent.h"
 #include "ArsenalCharacter.generated.h"
 
 UCLASS()
@@ -63,7 +64,7 @@ public:
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UCombatComponent* CombatComp;
+	UCombatComponent* CombatComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UHealthComponent* HealthComp;

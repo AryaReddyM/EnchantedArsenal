@@ -75,22 +75,20 @@ void UCombatComponent::Shoot(bool bTriggered) {
 	bShootButtonPressed = bTriggered;
 	
 	if (bShootButtonPressed) {
-		FHitResult HitResult;
-		TraceUnderCrosshairs(HitResult);
-		ServerShoot(HitResult.ImpactPoint);
+		ServerShoot();
 	}
 }
 
-void UCombatComponent::ServerShoot_Implementation(const FVector_NetQuantize& TraceHitTarget) {
-	MultiShoot(TraceHitTarget);
+void UCombatComponent::ServerShoot_Implementation() {
+	MultiShoot();
 }
 
-void UCombatComponent::MultiShoot_Implementation(const FVector_NetQuantize& TraceHitTarget) {
+void UCombatComponent::MultiShoot_Implementation() {
 	if (SpawnedWeapon == nullptr) return;
 
 	if (Character) {
 		Character->PlayShootMontage(bAiming);
-		SpawnedWeapon->StartShoot(TraceHitTarget);
+		SpawnedWeapon->StartShoot();
 	}
 }
 
