@@ -14,10 +14,13 @@ public:
 	virtual void Shoot() override;
 	virtual void StartShoot() override;
 	UFUNCTION(Server, Reliable)
-	void ServerShoot(const FVector_NetQuantize& TraceEnd);
+	void ServerShoot(bool bHitSomething, const FVector_NetQuantize& ImpactPoint);
 
-	void ServerProcessShot(const FVector& TraceStart, const FVector& TraceEnd);
-	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastImpactEffects(FVector_NetQuantize ImpactPoint);
+
+	void ServerProcessShot(bool bHitSomething, const FVector& ImpactPoint);
+	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult);
 
 protected:
 	FTimerHandle ShootTimerHandle;

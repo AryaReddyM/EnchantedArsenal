@@ -8,33 +8,36 @@
 #include "Particles/ParticleSystem.h"
 #include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void AHitscanWeapon::Shoot() {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
     if (!InstigatorPawn) return;
 
+    FHitResult CrosshairHitResult;
+    InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
+
+    bool bHitSomething = CrosshairHitResult.bBlockingHit;
+    FVector ImpactPoint = bHitSomething ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;
+
     const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
     if (!MuzzleFlashSocket) return;
 
     FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-    FVector TraceStart = SocketTransform.GetLocation();
+    FVector MuzzleLocation = SocketTransform.GetLocation();
 
-    FHitResult CrosshairHitResult;
-    InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
-
-    FVector TraceEnd = CrosshairHitResult.bBlockingHit ?
-        CrosshairHitResult.ImpactPoint :
-        CrosshairHitResult.TraceEnd;
-
-    LocalShootEffects(TraceStart, TraceEnd);
+    if (InstigatorPawn->IsLocallyControlled()) {
+        LocalShootEffects(MuzzleLocation, ImpactPoint, CrosshairHitResult);
+    }
 
     if (!HasAuthority()) {
-        ServerShoot(TraceEnd);
+        ServerShoot(bHitSomething, ImpactPoint);
     }
     else {
-        ServerProcessShot(TraceStart, TraceEnd);
+        ServerProcessShot(bHitSomething, ImpactPoint);
     }
 }
+
 
 void AHitscanWeapon::StartShoot() {
     Super::StartShoot();
@@ -45,66 +48,86 @@ void AHitscanWeapon::StartShoot() {
     }
 }
 
-void AHitscanWeapon::ServerShoot_Implementation(const FVector_NetQuantize& TraceEnd) {
-    AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
-    if (!InstigatorPawn) return;
-
-    const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-    if (!MuzzleFlashSocket) return;
-
-    FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-    FVector TraceStart = SocketTransform.GetLocation();
-
-    ServerProcessShot(TraceStart, TraceEnd);
+void AHitscanWeapon::ServerShoot_Implementation(bool bHitSomething, const FVector_NetQuantize& ImpactPoint) {
+    ServerProcessShot(bHitSomething, ImpactPoint);
 }
 
-
-void AHitscanWeapon::ServerProcessShot(const FVector& TraceStart, const FVector& TraceEnd) {
+void AHitscanWeapon::ServerProcessShot(bool bHitSomething, const FVector& ImpactPoint) {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
     if (!InstigatorPawn) return;
+
+    if (!bHitSomething) {
+        return;
+    }
 
     TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
     ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
-    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 
     TArray<AActor*> ActorsToIgnore;
     ActorsToIgnore.Add(InstigatorPawn);
     ActorsToIgnore.Add(this);
 
-    FHitResult HitResult;
-    UKismetSystemLibrary::LineTraceSingleForObjects(
-        GetWorld(),
-        TraceStart,
-        TraceEnd,
-        ObjectTypes,
-        false,
-        ActorsToIgnore,
-        EDrawDebugTrace::None,
-        HitResult,
-        true
-    );
+    TArray<AActor*> OverlappedActors;
+    const float HitRadius = 30.f;
 
-    if (HitResult.bBlockingHit && HitResult.GetActor()) {
-        GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Hit:" + HitResult.GetActor()->GetActorLabel());
+    bool bAnyOverlap = UKismetSystemLibrary::SphereOverlapActors(GetWorld(), ImpactPoint, HitRadius, ObjectTypes, nullptr, ActorsToIgnore, OverlappedActors);
 
-        if (UHealthComponent* HealthComp = HitResult.GetActor()->FindComponentByClass<UHealthComponent>()) {
+    if (!bAnyOverlap) {
+        return;
+    }
+
+    AActor* BestTarget = nullptr;
+    float BestDistSqr = FLT_MAX;
+
+    for (AActor* Actor : OverlappedActors) {
+        float DistSqr = FVector::DistSquared(Actor->GetActorLocation(), ImpactPoint);
+        if (DistSqr < BestDistSqr) {
+            BestDistSqr = DistSqr;
+            BestTarget = Actor;
+        }
+    }
+
+    if (BestTarget) {
+        if (UHealthComponent* HealthComp = BestTarget->FindComponentByClass<UHealthComponent>()) {
             HealthComp->ApplyDamage(10.f);
 
-            GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Health:" + FString::SanitizeFloat(HealthComp->CurrentHealth));
+            GEngine->AddOnScreenDebugMessage(
+                -1, 2.0f, FColor::Red,
+                TEXT("Health: ") + FString::SanitizeFloat(HealthComp->CurrentHealth)
+            );
         }
 
-        if (ImpactParticles) {
-            UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, HitResult.ImpactPoint);
-        }
-
-        if (ImpactSound) {
-            UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, HitResult.ImpactPoint);
-        }
+        MulticastImpactEffects(ImpactPoint);
     }
 }
 
-void AHitscanWeapon::LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd) {
+
+void AHitscanWeapon::MulticastImpactEffects_Implementation(FVector_NetQuantize ImpactPoint) {
+    AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
+    if (InstigatorPawn && InstigatorPawn->IsLocallyControlled()) {
+        return;
+    }
+
+    if (ImpactParticles) {
+        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, ImpactPoint);
+    }
+
+    if (ImpactSound) {
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, ImpactPoint);
+    }
+}
+
+void AHitscanWeapon::LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult) {
     DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Yellow, false, 0.1f);
-    DrawDebugSphere(GetWorld(), TraceEnd, 8.f, 12, FColor::Yellow, false, 1.0f);
+    DrawDebugSphere(GetWorld(), TraceEnd, 8.0f, 12, FColor::Yellow, false, 0.1f);
+
+    if (CrosshairHitResult.bBlockingHit) {
+        if (ImpactParticles) {
+            UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, CrosshairHitResult.ImpactPoint);
+        }
+
+        if (ImpactSound) {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, CrosshairHitResult.ImpactPoint);
+        }
+    }
 }
