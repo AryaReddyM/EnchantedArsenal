@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
+#include "Components/BoxComponent.h"
 #include "ArsenalCharacter.generated.h"
 
 UCLASS()
@@ -47,7 +48,11 @@ public:
 	UFUNCTION()
 	void HandleDeath();
 
+	void AddRecoil();
+
 	////////////////////////////////////// Initalize Variables //////////////////////////////////////
+	float StoredDeltaTime;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SpringArmComp;
 
@@ -56,6 +61,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UBoxComponent* HeadshotBoxCollisionComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* SkeletalMeshComp = FindComponentByClass<USkeletalMeshComponent>();
@@ -93,9 +101,27 @@ public:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* ShootWeaponMontage;
 
+	UPROPERTY(EditAnywhere, Category = "Aim")
+	float HipCameraBoomLength = 300.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Aim")
+	float AimCameraBoomLength = 150.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Aim")
+	float ADSTime = 0.5f;
+
 	UPROPERTY(EditAnywhere, Category = Movement)
 	float IdleWalkRunInterpSpeed;
 
 	UPROPERTY(EditAnywhere, Category = Health)
 	float MaxHealth = 100;
+
+	float CurrentRecoilPitch = 0.f;
+	float TargetRecoilPitch = 0.f;
+
+	float CurrentRecoilYaw = 0.f;
+	float TargetRecoilYaw = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	float RecoilInterpSpeed = 12.f;
 };

@@ -22,6 +22,8 @@ public:
 	void ServerProcessShot(bool bHitSomething, const FVector& ImpactPoint);
 	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult);
 
+	bool CheckForHeadshot(AActor* HitActor, FVector ImpactPoint);
+
 protected:
 	FTimerHandle ShootTimerHandle;
 

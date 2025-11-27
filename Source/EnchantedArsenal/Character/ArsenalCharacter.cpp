@@ -10,6 +10,7 @@
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Components/HealthComponent.h"
 #include "ArsenalAnimInstance.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -28,6 +29,9 @@ AArsenalCharacter::AArsenalCharacter() {
 
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("Health Component"));
 	HealthComp->SetIsReplicated(true);
+
+	HeadshotBoxCollisionComp = CreateDefaultSubobject<UBoxComponent>(TEXT("Headshot Box Collision Component"));
+	HeadshotBoxCollisionComp->SetupAttachment(CapsuleComp);
 }
 
 void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
@@ -61,6 +65,31 @@ void AArsenalCharacter::BeginPlay() {
 
 void AArsenalCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
+
+	StoredDeltaTime = DeltaTime;
+
+	float NewRecoilPitch = FMath::FInterpTo(CurrentRecoilPitch, TargetRecoilPitch, DeltaTime, RecoilInterpSpeed);
+	float NewRecoilYaw = FMath::FInterpTo(CurrentRecoilYaw, TargetRecoilYaw, DeltaTime, RecoilInterpSpeed);
+
+	float DeltaPitch = NewRecoilPitch - CurrentRecoilPitch;
+	float DeltaYaw = NewRecoilYaw - CurrentRecoilYaw;
+
+	AddControllerPitchInput(DeltaPitch);
+	AddControllerYawInput(DeltaYaw);
+
+	CurrentRecoilPitch = NewRecoilPitch;
+	CurrentRecoilYaw = NewRecoilYaw;
+
+	if (FMath::IsNearlyEqual(CurrentRecoilPitch, TargetRecoilPitch, 0.01f)) {
+		CurrentRecoilPitch = TargetRecoilPitch = 0.f;
+	}
+
+	if (FMath::IsNearlyEqual(CurrentRecoilYaw, TargetRecoilYaw, 0.01f)) {
+		CurrentRecoilYaw = TargetRecoilYaw = 0.f;
+	}
+
+	float TargetFOV = IsAiming() ? AimCameraBoomLength : HipCameraBoomLength;
+	SpringArmComp->TargetArmLength = FMath::FInterpTo(SpringArmComp->TargetArmLength, TargetFOV, DeltaTime, ADSTime);
 }
 
 void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
@@ -172,5 +201,10 @@ void AArsenalCharacter::PlayShootMontage(bool bAiming) {
 
 void AArsenalCharacter::HandleDeath() {
 	Destroy();
+}
+
+void AArsenalCharacter::AddRecoil() {
+	TargetRecoilPitch += FMath::RandRange(-0.3f, 0.3f);
+	TargetRecoilYaw += FMath::RandRange(-0.3f, 0.3f);
 }
 

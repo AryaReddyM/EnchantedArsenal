@@ -36,6 +36,8 @@ void AHitscanWeapon::Shoot() {
     else {
         ServerProcessShot(bHitSomething, ImpactPoint);
     }
+
+    InstigatorPawn->AddRecoil();
 }
 
 
@@ -89,12 +91,14 @@ void AHitscanWeapon::ServerProcessShot(bool bHitSomething, const FVector& Impact
 
     if (BestTarget) {
         if (UHealthComponent* HealthComp = BestTarget->FindComponentByClass<UHealthComponent>()) {
-            HealthComp->ApplyDamage(10.f);
+            if (CheckForHeadshot(BestTarget, ImpactPoint)) {
+                HealthComp->ApplyDamage(15.f);
+            }
+            else {
+                HealthComp->ApplyDamage(10.f);
+            }
 
-            GEngine->AddOnScreenDebugMessage(
-                -1, 2.0f, FColor::Red,
-                TEXT("Health: ") + FString::SanitizeFloat(HealthComp->CurrentHealth)
-            );
+            GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Health: ") + FString::SanitizeFloat(HealthComp->CurrentHealth));
         }
 
         MulticastImpactEffects(ImpactPoint);
@@ -130,4 +134,18 @@ void AHitscanWeapon::LocalShootEffects(const FVector& TraceStart, const FVector&
             UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, CrosshairHitResult.ImpactPoint);
         }
     }
+}
+
+bool AHitscanWeapon::CheckForHeadshot(AActor* HitActor, FVector ImpactPoint) {
+    AArsenalCharacter* Character = Cast<AArsenalCharacter>(HitActor);
+
+    if (!Character) return false;
+
+    FBox CharacterHeadshotCollision = Character->HeadshotBoxCollisionComp->CalcBounds(Character->HeadshotBoxCollisionComp->GetComponentTransform()).GetBox();
+
+    if (CharacterHeadshotCollision.IsInside(ImpactPoint)) {
+        return true;
+    }
+
+    return false;
 }
