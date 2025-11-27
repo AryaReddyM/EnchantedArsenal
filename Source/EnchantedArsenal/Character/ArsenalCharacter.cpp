@@ -66,8 +66,6 @@ void AArsenalCharacter::BeginPlay() {
 void AArsenalCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
-	StoredDeltaTime = DeltaTime;
-
 	float NewRecoilPitch = FMath::FInterpTo(CurrentRecoilPitch, TargetRecoilPitch, DeltaTime, RecoilInterpSpeed);
 	float NewRecoilYaw = FMath::FInterpTo(CurrentRecoilYaw, TargetRecoilYaw, DeltaTime, RecoilInterpSpeed);
 
@@ -88,8 +86,8 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 		CurrentRecoilYaw = TargetRecoilYaw = 0.f;
 	}
 
-	float TargetFOV = IsAiming() ? AimCameraBoomLength : HipCameraBoomLength;
-	SpringArmComp->TargetArmLength = FMath::FInterpTo(SpringArmComp->TargetArmLength, TargetFOV, DeltaTime, ADSTime);
+	float TargetBoomLength = IsAiming() ? AimCameraBoomLength : HipCameraBoomLength;
+	SpringArmComp->TargetArmLength = FMath::FInterpTo(SpringArmComp->TargetArmLength, TargetBoomLength, DeltaTime, ADSTime);
 }
 
 void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {

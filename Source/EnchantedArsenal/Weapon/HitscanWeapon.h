@@ -31,6 +31,10 @@ protected:
 	float ShootRate;
 
 	UPROPERTY(EditAnywhere)
+	UParticleSystem* MuzzleFlashParticles;
+	FVector MuzzleLocation;
+
+	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticles;
 
 	UPROPERTY(EditAnywhere)

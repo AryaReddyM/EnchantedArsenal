@@ -24,7 +24,7 @@ void AHitscanWeapon::Shoot() {
     if (!MuzzleFlashSocket) return;
 
     FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-    FVector MuzzleLocation = SocketTransform.GetLocation();
+    MuzzleLocation = SocketTransform.GetLocation();
 
     if (InstigatorPawn->IsLocallyControlled()) {
         LocalShootEffects(MuzzleLocation, ImpactPoint, CrosshairHitResult);
@@ -119,6 +119,10 @@ void AHitscanWeapon::MulticastImpactEffects_Implementation(FVector_NetQuantize I
     if (ImpactSound) {
         UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, ImpactPoint);
     }
+
+    if (MuzzleFlashParticles) {
+        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashParticles, MuzzleLocation);
+    }
 }
 
 void AHitscanWeapon::LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult) {
@@ -132,6 +136,10 @@ void AHitscanWeapon::LocalShootEffects(const FVector& TraceStart, const FVector&
 
         if (ImpactSound) {
             UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, CrosshairHitResult.ImpactPoint);
+        }
+
+        if (MuzzleFlashParticles) {
+            UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashParticles, MuzzleLocation);
         }
     }
 }

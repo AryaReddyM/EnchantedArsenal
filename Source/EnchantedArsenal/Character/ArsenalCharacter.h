@@ -51,8 +51,6 @@ public:
 	void AddRecoil();
 
 	////////////////////////////////////// Initalize Variables //////////////////////////////////////
-	float StoredDeltaTime;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SpringArmComp;
 
