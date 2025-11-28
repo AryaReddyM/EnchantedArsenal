@@ -39,4 +39,16 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* ImpactSound;
+
+	UPROPERTY(EditAnywhere)
+	float Damage;
+
+	UPROPERTY(EditAnywhere)
+	float HeadshotDamage;
+
+	UPROPERTY(EditAnywhere)
+	float RecoilMin;
+
+	UPROPERTY(EditAnywhere)
+	float RecoilMax;
 };

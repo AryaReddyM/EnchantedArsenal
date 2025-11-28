@@ -8,20 +8,20 @@ void AArsenalHUD::DrawHUD() {
 
 	const FVector2D ViewportCenter = { ViewportSize.X * 0.5f, ViewportSize.Y * 0.5 };
 
-	if (HUDPackage.CrosshairsCenter) {
-		DrawCrosshair(HUDPackage.CrosshairsCenter, ViewportCenter);
+	if (CrosshairsCenter) {
+		DrawCrosshair(CrosshairsCenter, ViewportCenter);
 	}
-	if (HUDPackage.CrosshairsRight) {
-		DrawCrosshair(HUDPackage.CrosshairsRight, ViewportCenter);
+	if (CrosshairsRight) {
+		DrawCrosshair(CrosshairsRight, ViewportCenter);
 	}
-	if (HUDPackage.CrosshairsLeft) {
-		DrawCrosshair(HUDPackage.CrosshairsLeft, ViewportCenter);
+	if (CrosshairsLeft) {
+		DrawCrosshair(CrosshairsLeft, ViewportCenter);
 	}
-	if (HUDPackage.CrosshairsUp) {
-		DrawCrosshair(HUDPackage.CrosshairsUp, ViewportCenter);
+	if (CrosshairsUp) {
+		DrawCrosshair(CrosshairsUp, ViewportCenter);
 	}
-	if (HUDPackage.CrosshairsDown) {
-		DrawCrosshair(HUDPackage.CrosshairsDown, ViewportCenter);
+	if (CrosshairsDown) {
+		DrawCrosshair(CrosshairsDown, ViewportCenter);
 	}
 }
 

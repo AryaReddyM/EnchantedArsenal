@@ -37,7 +37,7 @@ void AHitscanWeapon::Shoot() {
         ServerProcessShot(bHitSomething, ImpactPoint);
     }
 
-    InstigatorPawn->AddRecoil();
+    InstigatorPawn->AddRecoil(RecoilMin, RecoilMax);
 }
 
 
@@ -92,10 +92,10 @@ void AHitscanWeapon::ServerProcessShot(bool bHitSomething, const FVector& Impact
     if (BestTarget) {
         if (UHealthComponent* HealthComp = BestTarget->FindComponentByClass<UHealthComponent>()) {
             if (CheckForHeadshot(BestTarget, ImpactPoint)) {
-                HealthComp->ApplyDamage(15.f);
+                HealthComp->ApplyDamage(HeadshotDamage);
             }
             else {
-                HealthComp->ApplyDamage(10.f);
+                HealthComp->ApplyDamage(Damage);
             }
 
             GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Health: ") + FString::SanitizeFloat(HealthComp->CurrentHealth));

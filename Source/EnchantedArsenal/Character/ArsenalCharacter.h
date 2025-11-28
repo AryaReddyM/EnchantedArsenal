@@ -48,7 +48,7 @@ public:
 	UFUNCTION()
 	void HandleDeath();
 
-	void AddRecoil();
+	void AddRecoil(float Min, float Max);
 
 	////////////////////////////////////// Initalize Variables //////////////////////////////////////
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -112,7 +112,7 @@ public:
 	float IdleWalkRunInterpSpeed;
 
 	UPROPERTY(EditAnywhere, Category = Health)
-	float MaxHealth = 100;
+	float MaxHealth = 250;
 
 	float CurrentRecoilPitch = 0.f;
 	float TargetRecoilPitch = 0.f;

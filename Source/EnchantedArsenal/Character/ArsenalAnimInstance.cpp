@@ -39,7 +39,6 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		Speed = FMath::FInterpTo(LastSpeed, Velocity.Size(), DeltaSeconds, ArsenalCharacter->IdleWalkRunInterpSpeed);
 	}
 
-	// Offset Yaw for Strafing
 	FRotator AimRotation = ArsenalCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(ArsenalCharacter->GetVelocity());
 	float LastYawOffset = YawOffset;

@@ -41,8 +41,6 @@ public:
 	void MultiShoot();
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
-	
-	void SetHUDCrosshairs(float DeltaTime);
 
 private:
 	AArsenalCharacter* Character;

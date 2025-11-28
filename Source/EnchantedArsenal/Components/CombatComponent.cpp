@@ -30,8 +30,6 @@ void UCombatComponent::BeginPlay() {
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	SetHUDCrosshairs(DeltaTime);
 }
 
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
@@ -112,38 +110,6 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
 		if (!TraceHitResult.bBlockingHit)
 		{
 			TraceHitResult.ImpactPoint = End;
-		}
-	}
-}
-
-void UCombatComponent::SetHUDCrosshairs(float DeltaTime) {
-	if (Character == nullptr ) return;
-
-	PlayerController = PlayerController == nullptr ? Cast<AArsenalPlayerController>(Character->Controller) : PlayerController;
-
-	if (PlayerController) {
-
-		HUD = HUD == nullptr ? Cast<AArsenalHUD>(PlayerController->GetHUD()) : HUD;
-
-		if (HUD) {
-			FHUDPackage HUDPackage;
-
-			if (SpawnedWeapon) {
-				HUDPackage.CrosshairsCenter = SpawnedWeapon->CrosshairsCenter;
-				HUDPackage.CrosshairsRight = SpawnedWeapon->CrosshairsRight;
-				HUDPackage.CrosshairsLeft = SpawnedWeapon->CrosshairsLeft;
-				HUDPackage.CrosshairsUp = SpawnedWeapon->CrosshairsUp;
-				HUDPackage.CrosshairsDown = SpawnedWeapon->CrosshairsDown;
-			}
-			else {
-				HUDPackage.CrosshairsCenter = nullptr;
-				HUDPackage.CrosshairsRight = nullptr;
-				HUDPackage.CrosshairsLeft = nullptr;
-				HUDPackage.CrosshairsUp = nullptr;
-				HUDPackage.CrosshairsDown = nullptr;
-			}
-
-			HUD->SetHUDPackage(HUDPackage);
 		}
 	}
 }

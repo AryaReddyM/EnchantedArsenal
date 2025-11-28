@@ -6,25 +6,8 @@
 
 class UTexture2D;
 
-USTRUCT(BlueprintType)
-struct FHUDPackage {
-	GENERATED_BODY()
-
-public:
-	UTexture2D* CrosshairsCenter;
-
-	UTexture2D* CrosshairsRight;
-
-	UTexture2D* CrosshairsLeft;
-
-	UTexture2D* CrosshairsUp;
-
-	UTexture2D* CrosshairsDown;
-};
-
 UCLASS()
-class ENCHANTEDARSENAL_API AArsenalHUD : public AHUD
-{
+class ENCHANTEDARSENAL_API AArsenalHUD : public AHUD {
 	GENERATED_BODY()
 	
 public:
@@ -32,9 +15,19 @@ public:
 
 	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter);
 
-private:
-	FHUDPackage HUDPackage;
+protected:
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsCenter;
 
-public:
-	FORCEINLINE void SetHUDPackage(const FHUDPackage& InHUDPackage) { HUDPackage = InHUDPackage; }
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsRight;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsLeft;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsUp;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshairs")
+	UTexture2D* CrosshairsDown;
 };

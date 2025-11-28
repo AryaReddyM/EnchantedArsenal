@@ -201,8 +201,8 @@ void AArsenalCharacter::HandleDeath() {
 	Destroy();
 }
 
-void AArsenalCharacter::AddRecoil() {
-	TargetRecoilPitch += FMath::RandRange(-0.3f, 0.3f);
-	TargetRecoilYaw += FMath::RandRange(-0.3f, 0.3f);
+void AArsenalCharacter::AddRecoil(float Min, float Max) {
+	TargetRecoilPitch += FMath::RandRange(Min, Max);
+	TargetRecoilYaw += FMath::RandRange(Min, Max);
 }
 
