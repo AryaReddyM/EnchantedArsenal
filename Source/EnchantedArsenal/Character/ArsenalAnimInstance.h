@@ -4,10 +4,11 @@
 #include "Animation/AnimInstance.h"
 #include "ArsenalAnimInstance.generated.h"
 
+class AArsenalCharacter;
+class AWeapon;
 
 UCLASS()
-class ENCHANTEDARSENAL_API UArsenalAnimInstance : public UAnimInstance
-{
+class ENCHANTEDARSENAL_API UArsenalAnimInstance : public UAnimInstance {
 	GENERATED_BODY()
 
 public:
@@ -16,7 +17,7 @@ public:
 
 private:
 	UPROPERTY(BlueprintReadWrite, Category = Character, meta = (AllowPrivateAccess = true))
-	class AArsenalCharacter* ArsenalCharacter;
+	AArsenalCharacter* ArsenalCharacter;
 
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	float Speed;
@@ -30,7 +31,7 @@ private:
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bWeaponEquipped;
 
-	class AWeapon* EquippedWeapon;
+	AWeapon* EquippedWeapon;
 	
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bIsCrouching;

@@ -11,6 +11,9 @@
 #include "EnchantedArsenal/Components/HealthComponent.h"
 #include "ArsenalAnimInstance.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
+#include "EnchantedArsenal/Components/CombatComponent.h"
+#include "Components/BoxComponent.h"
 
 AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -101,6 +104,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		
 		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipRifle);
+		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSMG);
 
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
@@ -138,6 +142,23 @@ void AArsenalCharacter::EquipRifle() {
 void AArsenalCharacter::ServerEquipRifle_Implementation() {
 	if (CombatComp) {
 		CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
+	}
+}
+
+void AArsenalCharacter::EquipSMG() {
+	if (CombatComp) {
+		if (HasAuthority()) {
+			CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
+		}
+		else {
+			ServerEquipRifle();
+		}
+	}
+}
+
+void AArsenalCharacter::ServerEquipSMG_Implementation() {
+	if (CombatComp) {
+		CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
 	}
 }
 

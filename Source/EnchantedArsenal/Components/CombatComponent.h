@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "EnchantedArsenal/Weapon/Weapon.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000;
@@ -10,6 +9,8 @@
 class AArsenalCharacter;
 class AArsenalPlayerController;
 class AArsenalHUD;
+class AWeapon;
+enum class EWeaponType : uint8;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENCHANTEDARSENAL_API UCombatComponent : public UActorComponent {
@@ -51,7 +52,10 @@ private:
 	AWeapon* SpawnedWeapon;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWeapon> Weapon;
+	TSubclassOf<AWeapon> Rifle;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> SMG;
 
 	UPROPERTY(Replicated)
 	bool bAiming;

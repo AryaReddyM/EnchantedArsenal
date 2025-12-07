@@ -3,6 +3,8 @@
 #include "Projectile.h"
 #include "TimerManager.h"
 #include "EnchantedArsenal/Character/ArsenalCharacter.h"
+#include "EnchantedArsenal/Components/CombatComponent.h"
+#include "Engine/TimerHandle.h"
 
 void AProjectileWeapon::Shoot() {
     Super::Shoot();

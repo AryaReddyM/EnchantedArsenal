@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "EnchantedArsenal/PlayerController/ArsenalPlayerController.h"
 #include "EnchantedArsenal/HUD/ArsenalHUD.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
 
 UCombatComponent::UCombatComponent() {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -43,14 +44,24 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 		FActorSpawnParameters SpawnInfo;
 		FTransform HandSocketTransform = HandSocket->GetSocketTransform(Character->GetMesh());
 
-		SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Weapon, HandSocketTransform, SpawnInfo);
+		switch (WeaponType) {
+		case EWeaponType::EWT_Rifle:
+			if (SpawnedWeapon) SpawnedWeapon->Destroy();
 
-		HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh());
+			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Rifle, HandSocketTransform, SpawnInfo);
+			break;
+		case EWeaponType::EWT_SMG:
+			if (SpawnedWeapon) SpawnedWeapon->Destroy();
+
+			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(SMG, HandSocketTransform, SpawnInfo);
+			break;
+		}
+
+		HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh  ());
 	}
 		
 	SpawnedWeapon->SetOwner(Character);
 }
-
 
 void UCombatComponent::SetAiming(bool bInAiming) {
 	bAiming = bInAiming;

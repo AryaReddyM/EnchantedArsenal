@@ -2,10 +2,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "EnchantedArsenal/Weapon/Weapon.h"
-#include "EnchantedArsenal/Components/CombatComponent.h"
-#include "Components/BoxComponent.h"
 #include "ArsenalCharacter.generated.h"
+
+class UBoxComponent;
+class UCombatComponent;
+class UHealthComponent;
+class UInputAction;
+class UInputMappingContext;
+class UAnimMontage;
+class USpringArmComponent;
+class UCameraComponent;
+class UInputComponent;
+class AWeapon;
 
 UCLASS()
 class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter {
@@ -25,13 +33,18 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	void Move(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
+
 	void EquipRifle();
 	UFUNCTION(Server, Reliable)
 	void ServerEquipRifle();
+	void EquipSMG();
+	UFUNCTION(Server, Reliable)
+	void ServerEquipSMG();
+
 	void Aim();
 	void AimReleased();
 	void Shoot();
@@ -52,10 +65,10 @@ public:
 
 	////////////////////////////////////// Initalize Variables //////////////////////////////////////
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* SpringArmComp;
+	USpringArmComponent* SpringArmComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* CameraComp;
+	UCameraComponent* CameraComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
@@ -73,13 +86,13 @@ public:
 	UCombatComponent* CombatComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UHealthComponent* HealthComp;
+	UHealthComponent* HealthComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputMappingContext* DefaultMappingContext;
+	UInputMappingContext* DefaultMappingContext;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MoveAction;
+	UInputAction* MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
@@ -91,13 +104,16 @@ public:
 	UInputAction* EquipRifleAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* EquipSMGAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ShootAction;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
-	class UAnimMontage* ShootWeaponMontage;
+	UAnimMontage* ShootWeaponMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float HipCameraBoomLength = 300.0f;

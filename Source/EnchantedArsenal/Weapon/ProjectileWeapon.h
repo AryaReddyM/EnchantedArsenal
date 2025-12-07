@@ -2,8 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Weapon.h"
-#include "Engine/TimerHandle.h"
 #include "ProjectileWeapon.generated.h"
+
+struct FTimerHandle;
 
 UCLASS()
 class ENCHANTEDARSENAL_API AProjectileWeapon : public AWeapon {
