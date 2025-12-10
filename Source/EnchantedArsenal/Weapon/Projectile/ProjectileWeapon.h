@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapon.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
 #include "ProjectileWeapon.generated.h"
 
 struct FTimerHandle;
@@ -12,7 +12,6 @@ class ENCHANTEDARSENAL_API AProjectileWeapon : public AWeapon {
 
 public:
 	virtual void Shoot() override;
-	virtual void StartShoot() override;
 
 protected:
 	UPROPERTY(EditAnywhere)

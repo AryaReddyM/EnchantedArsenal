@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapon.h"
+#include "EnchantedArsenal/Weapon/Weapon.h"
 #include "HitscanWeapon.generated.h"
 
 class USoundCue;
@@ -12,7 +12,6 @@ class ENCHANTEDARSENAL_API AHitscanWeapon : public AWeapon {
 
 public:
 	virtual void Shoot() override;
-	virtual void StartShoot() override;
 	UFUNCTION(Server, Reliable)
 	void ServerShoot(bool bHitSomething, const FVector_NetQuantize& ImpactPoint);
 

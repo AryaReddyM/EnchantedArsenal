@@ -36,6 +36,7 @@ public:
 	
 	virtual void Shoot(); 
 	virtual void StartShoot();
+	virtual void StopShoot();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
@@ -62,4 +63,6 @@ public:
 	UTexture2D* CrosshairsUp;
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
 	UTexture2D* CrosshairsDown;
+
+	float LastFireTime = -1000.f;
 };

@@ -16,6 +16,14 @@ void AHitscanWeapon::Shoot() {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
     if (!InstigatorPawn) return;
 
+    const float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    if (CurrentTime - LastFireTime < ShootRate) {
+        return;
+    }
+
+    LastFireTime = CurrentTime;
+
     FHitResult CrosshairHitResult;
     InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
 
@@ -40,16 +48,6 @@ void AHitscanWeapon::Shoot() {
     }
 
     InstigatorPawn->AddRecoil(RecoilMin, RecoilMax);
-}
-
-
-void AHitscanWeapon::StartShoot() {
-    Super::StartShoot();
-
-    if (!GetWorld()->GetTimerManager().IsTimerActive(ShootTimerHandle)) {
-        FTimerDelegate ShootTimerDelegate = FTimerDelegate::CreateUObject(this, &AHitscanWeapon::Shoot);
-        GetWorld()->GetTimerManager().SetTimer(ShootTimerHandle, ShootTimerDelegate, ShootRate, false);
-    }
 }
 
 void AHitscanWeapon::ServerShoot_Implementation(bool bHitSomething, const FVector_NetQuantize& ImpactPoint) {

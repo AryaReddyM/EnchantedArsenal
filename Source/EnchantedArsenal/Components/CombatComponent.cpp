@@ -97,7 +97,7 @@ void UCombatComponent::MultiShoot_Implementation() {
 
 	if (Character) {
 		Character->PlayShootMontage(bAiming);
-		SpawnedWeapon->StartShoot();
+		SpawnedWeapon->Shoot();
 	}
 }
 

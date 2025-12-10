@@ -11,6 +11,15 @@ void AProjectileWeapon::Shoot() {
 
     if (!HasAuthority()) return;
 
+    const float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    if (CurrentTime - LastFireTime < ShootRate) {
+        return;
+    }
+
+    LastFireTime = CurrentTime;
+
+
     const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
 
@@ -30,16 +39,5 @@ void AProjectileWeapon::Shoot() {
 
             GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
         }
-    }
-}
-
-void AProjectileWeapon::StartShoot() {
-    Super::StartShoot();
-
-    if (!HasAuthority()) return;
-
-    if (!GetWorld()->GetTimerManager().IsTimerActive(ShootTimerHandle)) {
-        FTimerDelegate ShootTimerDelegate = FTimerDelegate::CreateUObject(this, &AProjectileWeapon::Shoot);
-        GetWorld()->GetTimerManager().SetTimer(ShootTimerHandle, ShootTimerDelegate, ShootRate, false);
     }
 }
