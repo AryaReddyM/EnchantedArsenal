@@ -96,7 +96,9 @@ void UCombatComponent::MultiShoot_Implementation() {
 	if (SpawnedWeapon == nullptr) return;
 
 	if (Character) {
-		Character->PlayShootMontage(bAiming);
+		if (SpawnedWeapon->FireType == EFireType::EWT_Auto) {
+			Character->PlayShootMontage(bAiming);
+		}
 		SpawnedWeapon->Shoot();
 	}
 }
@@ -123,4 +125,10 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
 			TraceHitResult.ImpactPoint = End;
 		}
 	}
+}
+
+void UCombatComponent::SetSemiCounter(int Counter) {
+	if (!SpawnedWeapon) return;
+
+	SpawnedWeapon->SemiShotCounter = Counter;
 }

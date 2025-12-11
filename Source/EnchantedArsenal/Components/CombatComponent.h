@@ -43,7 +43,8 @@ public:
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
-private:
+	void SetSemiCounter(int Counter);
+
 	AArsenalCharacter* Character;
 	AArsenalPlayerController* PlayerController;
 	AArsenalHUD* HUD;

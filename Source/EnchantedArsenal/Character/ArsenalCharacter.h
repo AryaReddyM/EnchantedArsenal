@@ -48,6 +48,7 @@ public:
 	void Aim();
 	void AimReleased();
 	void Shoot();
+	void ShootStarted();
 	void ShootReleased();
 
 	bool IsWeaponEquipped();

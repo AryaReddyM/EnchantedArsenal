@@ -110,6 +110,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
 
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Shoot);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &AArsenalCharacter::ShootStarted);
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AArsenalCharacter::ShootReleased);
 	}
 }
@@ -178,6 +179,10 @@ void AArsenalCharacter::Shoot() {
 	if (CombatComp) {
 		CombatComp->Shoot(true);
 	}
+}
+
+void AArsenalCharacter::ShootStarted() {
+	CombatComp->SetSemiCounter(0);
 }
 
 void AArsenalCharacter::ShootReleased() {

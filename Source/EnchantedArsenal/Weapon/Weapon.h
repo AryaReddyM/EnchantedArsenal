@@ -9,6 +9,15 @@ class UTexture2D;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetWeaponMesh);
 
 UENUM(BlueprintType)
+enum class EFireType : uint8 {
+	EWT_Initial UMETA(DisplayName = "Initial Type"),
+	EWT_Auto UMETA(DisplayName = "Automatic"),
+	EWT_SemiAuto UMETA(DisplayName = "Semi-Automatic"),
+
+	EWT_MAX UMETA(DisplayName = "DefaultMax")
+};
+
+UENUM(BlueprintType)
 enum class EWeaponType : uint8 {
 	EWT_Initial UMETA(DisplayName = "Initial Type"),
 	EWT_Rifle UMETA(DisplayName = "Rifle"),
@@ -38,12 +47,14 @@ public:
 	virtual void StartShoot();
 	virtual void StopShoot();
 
-protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties", Replicated)
 	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", Replicated)
+	EFireType FireType;
 
 	UPROPERTY(BlueprintAssignable)
 	FSetWeaponMesh SetWeaponMesh;
@@ -65,4 +76,6 @@ public:
 	UTexture2D* CrosshairsDown;
 
 	float LastFireTime = -1000.f;
+
+	int SemiShotCounter = 0;
 };

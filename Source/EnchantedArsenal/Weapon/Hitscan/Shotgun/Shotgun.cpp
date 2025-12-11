@@ -15,6 +15,12 @@ void AShotgun::Shoot() {
         return;
     }
 
+    if (FireType == EFireType::EWT_SemiAuto) {
+        if (SemiShotCounter > 0) return;
+
+        InstigatorPawn->PlayShootMontage(InstigatorPawn->CombatComp->bAiming);
+    }
+
     LastFireTime = CurrentTime;
 
     HitLocations.Reset();
@@ -64,4 +70,6 @@ void AShotgun::Shoot() {
     }
 
     InstigatorPawn->AddRecoil(RecoilMin, RecoilMax);
+
+    SemiShotCounter++;
 }

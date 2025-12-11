@@ -24,6 +24,12 @@ void AHitscanWeapon::Shoot() {
 
     LastFireTime = CurrentTime;
 
+    if (FireType == EFireType::EWT_SemiAuto) {
+        if (SemiShotCounter > 0) return;
+
+        InstigatorPawn->PlayShootMontage(InstigatorPawn->CombatComp->bAiming);
+    }
+
     FHitResult CrosshairHitResult;
     InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
 
@@ -48,6 +54,8 @@ void AHitscanWeapon::Shoot() {
     }
 
     InstigatorPawn->AddRecoil(RecoilMin, RecoilMax);
+
+    SemiShotCounter++;
 }
 
 void AHitscanWeapon::ServerShoot_Implementation(bool bHitSomething, const FVector_NetQuantize& ImpactPoint) {
