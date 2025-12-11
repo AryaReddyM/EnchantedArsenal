@@ -44,7 +44,7 @@ void AShotgun::Shoot() {
 
         GetWorld()->LineTraceSingleByChannel(TempHitResult, Start, End, ECollisionChannel::ECC_Visibility);
 
-        HitLocations.Add(TempHitResult.ImpactPoint);
+        HitLocations.Add(TempHitResult.bBlockingHit ? TempHitResult.ImpactPoint : End);
     }
 
     for (int i = 0; i < HitLocations.Num(); i++) {
