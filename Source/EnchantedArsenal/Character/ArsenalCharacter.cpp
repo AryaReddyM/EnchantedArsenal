@@ -106,6 +106,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipRifle);
 		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSMG);
 		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipShotgun);
+		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipPistol);
 
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
@@ -140,7 +141,6 @@ void AArsenalCharacter::EquipRifle() {
 		}
 	}
 }
-
 void AArsenalCharacter::ServerEquipRifle_Implementation() {
 	if (CombatComp) {
 		CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
@@ -153,12 +153,10 @@ void AArsenalCharacter::EquipSMG() {
 			CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
 		}
 		else {
-			ServerEquipRifle();
+			ServerEquipSMG();
 		}
 	}
 }
-
-
 void AArsenalCharacter::ServerEquipSMG_Implementation() {
 	if (CombatComp) {
 		CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
@@ -171,14 +169,30 @@ void AArsenalCharacter::EquipShotgun() {
 			CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
 		}
 		else {
-			ServerEquipRifle();
+			ServerEquipShotgun();
 		}
 	}
 }
-
 void AArsenalCharacter::ServerEquipShotgun_Implementation() {
 	if (CombatComp) {
 		CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
+	}
+}
+
+
+void AArsenalCharacter::EquipPistol() {
+	if (CombatComp) {
+		if (HasAuthority()) {
+			CombatComp->EquipWeapon(EWeaponType::EWT_Pistol);
+		}
+		else {
+			ServerEquipPistol();
+		}
+	}
+}
+void AArsenalCharacter::ServerEquipPistol_Implementation() {
+	if (CombatComp) {
+		CombatComp->EquipWeapon(EWeaponType::EWT_Pistol);
 	}
 }
 
@@ -195,7 +209,7 @@ void AArsenalCharacter::AimReleased() {
 }
 
 void AArsenalCharacter::Shoot() {
-	if (CombatComp) {
+	if (CombatComp && CombatComp->CanShoot()) {
 		CombatComp->Shoot(true);
 	}
 }

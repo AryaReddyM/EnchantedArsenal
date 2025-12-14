@@ -36,8 +36,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 	if (Character == nullptr) return;
 
-	AWeapon* TempWeapon = NewObject<AWeapon>(this, AWeapon::StaticClass());
-	TempWeapon->SetWeaponType(WeaponType);
+	LastEquipTime = GetWorld()->GetTimeSeconds();
 		
 	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
 	if (HandSocket) {
@@ -60,9 +59,14 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 
 			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(SMG, HandSocketTransform, SpawnInfo);
 			break;
+		case EWeaponType::EWT_Pistol:
+			if (SpawnedWeapon) SpawnedWeapon->Destroy();
+
+			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Pistol, HandSocketTransform, SpawnInfo);
+			break;
 		}
 
-		HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh  ());
+		HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh());
 	}
 		
 	SpawnedWeapon->SetOwner(Character);
@@ -86,8 +90,10 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bInAiming) {
 }
 
 void UCombatComponent::Shoot(bool bTriggered) {
+	if (!SpawnedWeapon) return;
+
 	bShootButtonPressed = bTriggered;
-	
+
 	if (bShootButtonPressed) {
 		ServerShoot();
 	}
@@ -98,7 +104,7 @@ void UCombatComponent::ServerShoot_Implementation() {
 }
 
 void UCombatComponent::MultiShoot_Implementation() {
-	if (SpawnedWeapon == nullptr) return;
+	if (!SpawnedWeapon) return;
 
 	if (Character) {
 		if (SpawnedWeapon->FireType == EFireType::EWT_Auto) {
@@ -136,4 +142,12 @@ void UCombatComponent::SetSemiCounter(int Counter) {
 	if (!SpawnedWeapon) return;
 
 	SpawnedWeapon->SemiShotCounter = Counter;
+}
+
+bool UCombatComponent::CanShoot() {
+	if (!SpawnedWeapon) return false;
+
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+
+	return (CurrentTime - LastEquipTime) >= SpawnedWeapon->EquipDelay;
 }

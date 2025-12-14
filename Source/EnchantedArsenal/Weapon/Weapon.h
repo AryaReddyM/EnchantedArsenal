@@ -74,8 +74,35 @@ public:
 	UTexture2D* CrosshairsUp;
 	UPROPERTY(EditAnywhere, Category = Crosshairs)
 	UTexture2D* CrosshairsDown;
+	UPROPERTY(EditAnywhere)
+	float ShootRate;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* MuzzleFlashParticles;
+	FVector MuzzleLocation;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ImpactParticles;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ImpactSound;
+
+	UPROPERTY(EditAnywhere)
+	float Damage;
+
+	UPROPERTY(EditAnywhere)
+	float HeadshotDamage;
+
+	UPROPERTY(EditAnywhere)
+	float RecoilMin;
+
+	UPROPERTY(EditAnywhere)
+	float RecoilMax;
 
 	float LastFireTime = -1000.f;
 
 	int SemiShotCounter = 0;
+
+	UPROPERTY(EditAnywhere)
+	float EquipDelay;
 };

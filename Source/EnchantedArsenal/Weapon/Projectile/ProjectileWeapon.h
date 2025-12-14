@@ -18,7 +18,4 @@ protected:
 	TSubclassOf<class AProjectile> ProjectileClass;
 
 	FTimerHandle ShootTimerHandle;
-
-	UPROPERTY(EditAnywhere)
-	float ShootRate;
 };

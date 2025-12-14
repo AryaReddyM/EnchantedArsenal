@@ -45,6 +45,8 @@ public:
 
 	void SetSemiCounter(int Counter);
 
+	bool CanShoot();
+
 	AArsenalCharacter* Character;
 	AArsenalPlayerController* PlayerController;
 	AArsenalHUD* HUD;
@@ -59,6 +61,9 @@ public:
 	TSubclassOf<AWeapon> Shotgun;
 
 	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> Pistol;
+
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> SMG;
 
 	UPROPERTY(Replicated)
@@ -70,4 +75,6 @@ public:
 	float AimWalkSpeed = 450.0f;
 
 	bool bShootButtonPressed;
+
+	float LastEquipTime = -1000.f;
 };

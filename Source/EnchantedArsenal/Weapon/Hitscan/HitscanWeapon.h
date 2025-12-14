@@ -25,29 +25,4 @@ public:
 
 protected:
 	FTimerHandle ShootTimerHandle;
-
-	UPROPERTY(EditAnywhere)
-	float ShootRate;
-
-	UPROPERTY(EditAnywhere)
-	UParticleSystem* MuzzleFlashParticles;
-	FVector MuzzleLocation;
-
-	UPROPERTY(EditAnywhere)
-	UParticleSystem* ImpactParticles;
-
-	UPROPERTY(EditAnywhere)
-	USoundCue* ImpactSound;
-
-	UPROPERTY(EditAnywhere)
-	float Damage;
-
-	UPROPERTY(EditAnywhere)
-	float HeadshotDamage;
-
-	UPROPERTY(EditAnywhere)
-	float RecoilMin;
-
-	UPROPERTY(EditAnywhere)
-	float RecoilMax;
 };

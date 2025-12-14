@@ -11,7 +11,11 @@ class ENCHANTEDARSENAL_API AShotgun : public AHitscanWeapon {
 public:
 	virtual void Shoot() override;
 
-	float Pellets = 9;
+	UPROPERTY(EditAnywhere)
+	float Pellets;
+
 	TArray<FVector> HitLocations;
-	float PelletAngle = 3.0f;
+
+	UPROPERTY(EditAnywhere)
+	float PelletAngle;
 };

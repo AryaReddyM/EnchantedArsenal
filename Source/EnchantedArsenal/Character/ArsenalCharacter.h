@@ -42,13 +42,18 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerEquipRifle();
 
+	void EquipShotgun();
+	UFUNCTION(Server, Reliable)
+	void ServerEquipShotgun();
+
 	void EquipSMG();
 	UFUNCTION(Server, Reliable)
 	void ServerEquipSMG();
 
-	void EquipShotgun();
+	void EquipPistol();
 	UFUNCTION(Server, Reliable)
-	void ServerEquipShotgun();
+	void ServerEquipPistol();
+
 
 	void Aim();
 	void AimReleased();
@@ -114,6 +119,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipShotgunAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* EquipPistolAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
