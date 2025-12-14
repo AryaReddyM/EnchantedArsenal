@@ -105,6 +105,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		
 		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipRifle);
 		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSMG);
+		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipShotgun);
 
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
@@ -157,9 +158,27 @@ void AArsenalCharacter::EquipSMG() {
 	}
 }
 
+
 void AArsenalCharacter::ServerEquipSMG_Implementation() {
 	if (CombatComp) {
 		CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
+	}
+}
+
+void AArsenalCharacter::EquipShotgun() {
+	if (CombatComp) {
+		if (HasAuthority()) {
+			CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
+		}
+		else {
+			ServerEquipRifle();
+		}
+	}
+}
+
+void AArsenalCharacter::ServerEquipShotgun_Implementation() {
+	if (CombatComp) {
+		CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
 	}
 }
 

@@ -56,6 +56,9 @@ public:
 	TSubclassOf<AWeapon> Rifle;
 
 	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> Shotgun;
+
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> SMG;
 
 	UPROPERTY(Replicated)

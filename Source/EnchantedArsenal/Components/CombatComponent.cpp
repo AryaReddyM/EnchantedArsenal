@@ -50,6 +50,11 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 
 			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Rifle, HandSocketTransform, SpawnInfo);
 			break;
+		case EWeaponType::EWT_Shotgun:
+			if (SpawnedWeapon) SpawnedWeapon->Destroy();
+
+			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Shotgun, HandSocketTransform, SpawnInfo);
+			break;
 		case EWeaponType::EWT_SMG:
 			if (SpawnedWeapon) SpawnedWeapon->Destroy();
 
