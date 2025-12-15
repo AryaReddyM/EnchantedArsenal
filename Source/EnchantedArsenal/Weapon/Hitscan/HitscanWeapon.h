@@ -15,13 +15,16 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerShoot(bool bHitSomething, const FVector_NetQuantize& ImpactPoint);
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastImpactEffects(FVector_NetQuantize ImpactPoint);
 
 	void ServerProcessShot(bool bHitSomething, const FVector& ImpactPoint);
 	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult);
 
 	bool CheckForHeadshot(AActor* HitActor, FVector ImpactPoint);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayShootAnimation(bool bAiming);
 
 protected:
 	FTimerHandle ShootTimerHandle;

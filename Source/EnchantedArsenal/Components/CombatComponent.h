@@ -34,7 +34,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bInAiming);
 	
-
 	void Shoot(bool bTriggered);
 	UFUNCTION(Server, Reliable)
 	void ServerShoot();
@@ -44,6 +43,12 @@ public:
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
 	void SetSemiCounter(int Counter);
+	UFUNCTION(Server, Reliable)
+	void ServerSetSemiCounter(int32 NewCounter);
+
+	void ResetSemiCounter();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerResetSemiCounter();
 
 	bool CanShoot();
 
@@ -51,8 +56,11 @@ public:
 	AArsenalPlayerController* PlayerController;
 	AArsenalHUD* HUD;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_SpawnedWeapon)
 	AWeapon* SpawnedWeapon;
+
+	UFUNCTION()
+	void OnRep_SpawnedWeapon();
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> Rifle;
@@ -77,4 +85,10 @@ public:
 	bool bShootButtonPressed;
 
 	float LastEquipTime = -1000.f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_SemiShotCounter)
+	int SemiShotCounter = 0;
+
+	UFUNCTION()
+	void OnRep_SemiShotCounter();
 };

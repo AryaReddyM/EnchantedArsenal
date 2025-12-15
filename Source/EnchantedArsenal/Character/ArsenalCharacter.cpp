@@ -39,6 +39,9 @@ AArsenalCharacter::AArsenalCharacter() {
 
 void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AArsenalCharacter, CombatComp);
+	DOREPLIFETIME(AArsenalCharacter, HealthComp);
 }
 
 void AArsenalCharacter::PostInitializeComponents() {
@@ -215,7 +218,9 @@ void AArsenalCharacter::Shoot() {
 }
 
 void AArsenalCharacter::ShootStarted() {
-	CombatComp->SetSemiCounter(0);
+	if (IsLocallyControlled() && CombatComp) {
+		CombatComp->ResetSemiCounter();
+	}
 }
 
 void AArsenalCharacter::ShootReleased() {

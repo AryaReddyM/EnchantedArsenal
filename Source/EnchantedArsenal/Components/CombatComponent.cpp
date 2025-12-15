@@ -19,6 +19,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, SpawnedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
+	DOREPLIFETIME(UCombatComponent, SemiShotCounter);
 }
 
 void UCombatComponent::BeginPlay() {
@@ -34,42 +35,45 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 }
 
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
-	if (Character == nullptr) return;
+	if (!Character || !GetOwner()->HasAuthority()) return;
 
-	LastEquipTime = GetWorld()->GetTimeSeconds();
-		
+	if (SpawnedWeapon) {
+		SpawnedWeapon->Destroy();
+		SpawnedWeapon = nullptr;
+	}
+
 	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
 	if (HandSocket) {
-		FActorSpawnParameters SpawnInfo;
-		FTransform HandSocketTransform = HandSocket->GetSocketTransform(Character->GetMesh());
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = Character;
+		SpawnParams.Instigator = Character;
+
+		FTransform SpawnTransform = HandSocket->GetSocketTransform(Character->GetMesh());
+		AWeapon* NewWeapon = nullptr;
 
 		switch (WeaponType) {
 		case EWeaponType::EWT_Rifle:
-			if (SpawnedWeapon) SpawnedWeapon->Destroy();
-
-			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Rifle, HandSocketTransform, SpawnInfo);
+			NewWeapon = GetWorld()->SpawnActor<AWeapon>(Rifle, SpawnTransform, SpawnParams);
 			break;
 		case EWeaponType::EWT_Shotgun:
-			if (SpawnedWeapon) SpawnedWeapon->Destroy();
-
-			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Shotgun, HandSocketTransform, SpawnInfo);
+			NewWeapon = GetWorld()->SpawnActor<AWeapon>(Shotgun, SpawnTransform, SpawnParams);
 			break;
 		case EWeaponType::EWT_SMG:
-			if (SpawnedWeapon) SpawnedWeapon->Destroy();
-
-			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(SMG, HandSocketTransform, SpawnInfo);
+			NewWeapon = GetWorld()->SpawnActor<AWeapon>(SMG, SpawnTransform, SpawnParams);
 			break;
 		case EWeaponType::EWT_Pistol:
-			if (SpawnedWeapon) SpawnedWeapon->Destroy();
-
-			SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(Pistol, HandSocketTransform, SpawnInfo);
+			NewWeapon = GetWorld()->SpawnActor<AWeapon>(Pistol, SpawnTransform, SpawnParams);
+			break;
+		default:
 			break;
 		}
 
-		HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh());
+		if (NewWeapon) {
+			SpawnedWeapon = NewWeapon;
+			HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh());
+			SpawnedWeapon->SetOwner(Character);
+		}
 	}
-		
-	SpawnedWeapon->SetOwner(Character);
 }
 
 void UCombatComponent::SetAiming(bool bInAiming) {
@@ -141,7 +145,37 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
 void UCombatComponent::SetSemiCounter(int Counter) {
 	if (!SpawnedWeapon) return;
 
-	SpawnedWeapon->SemiShotCounter = Counter;
+	if (GetOwnerRole() < ROLE_Authority) {
+		ServerSetSemiCounter(Counter);
+	}
+	else {
+		SemiShotCounter = Counter;
+		OnRep_SemiShotCounter();
+	}
+}
+
+void UCombatComponent::ServerSetSemiCounter_Implementation(int32 NewCounter) {
+	SemiShotCounter = NewCounter;
+	OnRep_SemiShotCounter();
+}
+
+void UCombatComponent::ResetSemiCounter() {
+	if (GetOwnerRole() < ROLE_Authority) {
+		ServerResetSemiCounter();
+	}
+	else {
+		SemiShotCounter = 0;
+		OnRep_SemiShotCounter();
+	}
+}
+
+void UCombatComponent::ServerResetSemiCounter_Implementation() {
+	SemiShotCounter = 0;
+	OnRep_SemiShotCounter();
+}
+
+bool UCombatComponent::ServerResetSemiCounter_Validate() {
+	return true;
 }
 
 bool UCombatComponent::CanShoot() {
@@ -150,4 +184,17 @@ bool UCombatComponent::CanShoot() {
 	const float CurrentTime = GetWorld()->GetTimeSeconds();
 
 	return (CurrentTime - LastEquipTime) >= SpawnedWeapon->EquipDelay;
+}
+
+void UCombatComponent::OnRep_SpawnedWeapon() {
+	if (Character && SpawnedWeapon) {
+		const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
+		if (HandSocket) {
+			HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh());
+		}
+		SpawnedWeapon->SetOwner(Character);
+	}
+}
+
+void UCombatComponent::OnRep_SemiShotCounter() {
 }

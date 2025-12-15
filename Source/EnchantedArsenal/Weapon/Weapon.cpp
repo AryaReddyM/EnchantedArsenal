@@ -20,6 +20,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponType);
+	DOREPLIFETIME(AWeapon, FireType);
 }
 
 void AWeapon::BeginPlay() {
@@ -44,4 +45,11 @@ void AWeapon::StopShoot() {
 void AWeapon::SetWeaponType(EWeaponType InWeaponType) {
 	WeaponType = InWeaponType;
 	SetWeaponMesh.Broadcast();
+}
+
+void AWeapon::OnRep_WeaponType() {
+	SetWeaponMesh.Broadcast();
+}
+
+void AWeapon::OnRep_FireType() {
 }

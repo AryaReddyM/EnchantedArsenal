@@ -11,65 +11,57 @@ void AShotgun::Shoot() {
 
     const float CurrentTime = GetWorld()->GetTimeSeconds();
 
-    if (CurrentTime - LastFireTime < ShootRate) {
-        return;
-    }
+    if (CurrentTime - LastFireTime < ShootRate) return;
 
-    if (FireType == EFireType::EWT_SemiAuto) {
-        if (SemiShotCounter > 0) return;
-
-        InstigatorPawn->PlayShootMontage(InstigatorPawn->CombatComp->bAiming);
-    }
+    if (FireType == EFireType::EWT_SemiAuto && InstigatorPawn->CombatComp && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
 
     LastFireTime = CurrentTime;
-
     HitLocations.Reset();
+
+    if (InstigatorPawn->IsLocallyControlled()) {
+        InstigatorPawn->PlayShootMontage(InstigatorPawn->CombatComp->bAiming);
+    }
 
     FHitResult CrosshairHitResult;
     InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
 
-    for (int i = 1; i <= Pellets; i++) {
-        FHitResult TempHitResult;
+    FVector CameraLoc = InstigatorPawn->CameraComp->GetComponentLocation();
+    FVector CrosshairImpactPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;
+    FVector AimDir = (CrosshairImpactPoint - CameraLoc).GetSafeNormal();
 
-        FVector Start = InstigatorPawn->CameraComp->GetComponentLocation();
-
-        FVector CrosshairImpactPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;
-
-        FVector AimDir = (CrosshairImpactPoint - Start).GetSafeNormal();
-
-        FVector PelletDir = AimDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::UpVector);
+    for (int i = 0; i < Pellets; i++) {
+        FVector PelletDir = AimDir;
+        PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::UpVector);
         PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::RightVector);
 
-        FVector End = Start + PelletDir * 10000.0f;
+        FVector End = CameraLoc + PelletDir * 10000.0f;
+        FHitResult PelletHit;
+        GetWorld()->LineTraceSingleByChannel(PelletHit, CameraLoc, End, ECollisionChannel::ECC_Visibility);
 
-        GetWorld()->LineTraceSingleByChannel(TempHitResult, Start, End, ECollisionChannel::ECC_Visibility);
-
-        HitLocations.Add(TempHitResult.bBlockingHit ? TempHitResult.ImpactPoint : End);
+        HitLocations.Add(PelletHit.bBlockingHit ? PelletHit.ImpactPoint : End);
     }
 
-    for (int i = 0; i < HitLocations.Num(); i++) {
-        bool bHitSomething = CrosshairHitResult.bBlockingHit;
-        FVector ImpactPoint = HitLocations[i];
+    const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
+    if (!MuzzleFlashSocket) return;
 
-        const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-        if (!MuzzleFlashSocket) return;
+    MuzzleLocation = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
 
-        FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-        MuzzleLocation = SocketTransform.GetLocation();
-
+    for (const FVector& ImpactPoint : HitLocations) {
         if (InstigatorPawn->IsLocallyControlled()) {
             LocalShootEffects(MuzzleLocation, ImpactPoint, CrosshairHitResult);
         }
 
         if (!HasAuthority()) {
-            ServerShoot(bHitSomething, ImpactPoint);
+            ServerShoot(true, ImpactPoint);
         }
         else {
-            ServerProcessShot(bHitSomething, ImpactPoint);
+            ServerProcessShot(true, ImpactPoint);
         }
     }
 
     InstigatorPawn->AddRecoil(RecoilMin, RecoilMax);
 
-    SemiShotCounter++;
+    if (InstigatorPawn->CombatComp) {
+        InstigatorPawn->CombatComp->SetSemiCounter(InstigatorPawn->CombatComp->SemiShotCounter + 1);
+    }
 }

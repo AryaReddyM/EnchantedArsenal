@@ -47,20 +47,25 @@ public:
 	virtual void StartShoot();
 	virtual void StopShoot();
 
+	void SetWeaponType(EWeaponType InWeaponState);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties", Replicated)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties", ReplicatedUsing = OnRep_WeaponType)
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", Replicated)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", ReplicatedUsing = OnRep_FireType)
 	EFireType FireType;
+
+	UFUNCTION()
+	void OnRep_WeaponType();
+
+	UFUNCTION()
+	void OnRep_FireType();
 
 	UPROPERTY(BlueprintAssignable)
 	FSetWeaponMesh SetWeaponMesh;
-
-public:
-	void SetWeaponType(EWeaponType InWeaponState);
 
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh;  }
 
@@ -100,8 +105,6 @@ public:
 	float RecoilMax;
 
 	float LastFireTime = -1000.f;
-
-	int SemiShotCounter = 0;
 
 	UPROPERTY(EditAnywhere)
 	float EquipDelay;
