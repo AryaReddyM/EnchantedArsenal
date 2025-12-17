@@ -67,7 +67,7 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		FVector OutPosition;
 		FRotator OutRotation;
 
-		ArsenalCharacter->GetMesh()->TransformToBoneSpace(FName("Hand_R"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
+		ArsenalCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
 	}

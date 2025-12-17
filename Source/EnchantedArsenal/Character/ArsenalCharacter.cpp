@@ -252,7 +252,13 @@ void AArsenalCharacter::PlayShootMontage(bool bAiming) {
 	if (AnimInstance && ShootWeaponMontage) {
 
 		FName SectionName;
-		SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+
+		if (bAiming) {
+			SectionName = FName("RifleAim");
+		}
+		else {
+			SectionName = FName("RifleHip");
+		}
 
 		if (!AnimInstance->Montage_IsPlaying(ShootWeaponMontage)) {
 			AnimInstance->Montage_Play(ShootWeaponMontage);
