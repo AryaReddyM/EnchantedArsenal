@@ -55,6 +55,15 @@ void AArsenalCharacter::PostInitializeComponents() {
 		HealthComp->MaxHealth = MaxHealth;
 		HealthComp->CurrentHealth = MaxHealth;
 	}
+
+	if (CombatComp) {
+		if (HasAuthority()) {
+			CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
+		}
+		else {
+			ServerEquipRifle();
+		}
+	}
 }
 
 void AArsenalCharacter::BeginPlay() {
@@ -248,6 +257,17 @@ void AArsenalCharacter::PlayShootMontage(bool bAiming) {
 	if (CombatComp == nullptr || CombatComp->SpawnedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UE_LOG(LogTemp, Warning, TEXT("AnimInstance: %s  Class: %s"),
+		*GetNameSafe(AnimInstance),
+		AnimInstance ? *GetNameSafe(AnimInstance->GetClass()) : TEXT("NULL"));
+
+	UE_LOG(LogTemp, Warning, TEXT("ShootWeaponMontage: %s Sections=%d"),
+		*GetNameSafe(ShootWeaponMontage),
+		ShootWeaponMontage ? ShootWeaponMontage->CompositeSections.Num() : -1);
+
+	const bool bHasAim = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleAim")) != INDEX_NONE;
+	const bool bHasHip = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleHip")) != INDEX_NONE;
+	UE_LOG(LogTemp, Warning, TEXT("Has RifleAim=%d Has RifleHip=%d"), bHasAim, bHasHip);
 
 	if (AnimInstance && ShootWeaponMontage) {
 
@@ -269,6 +289,7 @@ void AArsenalCharacter::PlayShootMontage(bool bAiming) {
 
 void AArsenalCharacter::HandleDeath() {
 	Destroy();
+	CombatComp->DestroyWeapon();
 }
 
 void AArsenalCharacter::AddRecoil(float Min, float Max) {

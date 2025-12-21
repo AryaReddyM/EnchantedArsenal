@@ -62,8 +62,11 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		Pitch -= 360.0f;
 	}
 
+	float TargetYaw = UKismetMathLibrary::NormalizedDeltaRotator(AimRotation, ArsenalCharacter->GetActorRotation()).Yaw;
+	Yaw = FMath::FInterpTo(Yaw, TargetYaw, DeltaSeconds, 6.0f);
+
 	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && ArsenalCharacter->GetMesh()) {
-		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"));
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), RTS_World);
 		FVector OutPosition;
 		FRotator OutRotation;
 

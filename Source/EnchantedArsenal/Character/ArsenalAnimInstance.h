@@ -45,11 +45,17 @@ private:
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	float Lean;
 
-	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadWrite, Category = "AimOffset", meta = (AllowPrivateAccess = true))
 	float Pitch;
+
+	UPROPERTY(BlueprintReadOnly, Category = "AimOffset", meta = (AllowPrivateAccess = true))
+	float Yaw;
 
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	FTransform LeftHandTransform;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	FTransform GripTransform;
 
 	FRotator CharacterRotationLastFrame;
 	FRotator CharacterRotation;

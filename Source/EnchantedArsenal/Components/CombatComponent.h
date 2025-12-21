@@ -29,6 +29,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void EquipWeapon(EWeaponType WeaponType);
+	void DestroyWeapon();
 
 	void SetAiming(bool bInAiming);
 	UFUNCTION(Server, Reliable)

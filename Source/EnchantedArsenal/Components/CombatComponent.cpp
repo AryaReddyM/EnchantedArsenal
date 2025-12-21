@@ -35,45 +35,69 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 }
 
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
-	if (!Character || !GetOwner()->HasAuthority()) return;
+	if (!Character || !Character->HasAuthority())
+		return;
 
 	if (SpawnedWeapon) {
 		SpawnedWeapon->Destroy();
 		SpawnedWeapon = nullptr;
 	}
 
-	const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
-	if (HandSocket) {
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = Character;
-		SpawnParams.Instigator = Character;
-
-		FTransform SpawnTransform = HandSocket->GetSocketTransform(Character->GetMesh());
-		AWeapon* NewWeapon = nullptr;
-
-		switch (WeaponType) {
-		case EWeaponType::EWT_Rifle:
-			NewWeapon = GetWorld()->SpawnActor<AWeapon>(Rifle, SpawnTransform, SpawnParams);
-			break;
-		case EWeaponType::EWT_Shotgun:
-			NewWeapon = GetWorld()->SpawnActor<AWeapon>(Shotgun, SpawnTransform, SpawnParams);
-			break;
-		case EWeaponType::EWT_SMG:
-			NewWeapon = GetWorld()->SpawnActor<AWeapon>(SMG, SpawnTransform, SpawnParams);
-			break;
-		case EWeaponType::EWT_Pistol:
-			NewWeapon = GetWorld()->SpawnActor<AWeapon>(Pistol, SpawnTransform, SpawnParams);
-			break;
-		default:
-			break;
-		}
-
-		if (NewWeapon) {
-			SpawnedWeapon = NewWeapon;
-			HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh());
-			SpawnedWeapon->SetOwner(Character);
-		}
+	TSubclassOf<AWeapon> WeaponClass = nullptr;
+	switch (WeaponType) {
+	case EWeaponType::EWT_Rifle:   WeaponClass = Rifle; break;
+	case EWeaponType::EWT_Shotgun: WeaponClass = Shotgun; break;
+	case EWeaponType::EWT_SMG:     WeaponClass = SMG; break;
+	case EWeaponType::EWT_Pistol:  WeaponClass = Pistol; break;
+	default: return;
 	}
+	if (!WeaponClass)
+		return;
+
+	FActorSpawnParameters Params;
+	Params.Owner = Character;
+	Params.Instigator = Character;
+
+	AWeapon* NewWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass, FTransform::Identity, Params);
+	if (!NewWeapon)
+		return;
+
+	USkeletalMeshComponent* CharMesh = Character->GetMesh();
+	USkeletalMeshComponent* WeaponMesh = NewWeapon->GetWeaponMesh();
+
+	if (!CharMesh || !WeaponMesh) {
+		NewWeapon->Destroy();
+		return;
+	}
+
+	const FName HandSocket(TEXT("RightHandSocket"));
+	const FName GripSocket(TEXT("GripSocket"));
+
+	if (!WeaponMesh->DoesSocketExist(GripSocket)) {
+		NewWeapon->Destroy();
+		return;
+	}
+
+	const FVector OriginalScale = NewWeapon->GetActorScale3D();
+
+	FTransform GripToRoot = WeaponMesh->GetSocketTransform(GripSocket, RTS_Component).Inverse();
+	FTransform HandWorldTransform = CharMesh->GetSocketTransform(HandSocket, RTS_World);
+
+	FTransform DesiredWeaponTransform = GripToRoot * HandWorldTransform;
+	DesiredWeaponTransform.SetScale3D(FVector(1.f));
+
+	NewWeapon->SetActorTransform(DesiredWeaponTransform);
+
+	NewWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
+
+	NewWeapon->SetActorScale3D(OriginalScale);
+
+	SpawnedWeapon = NewWeapon;
+	SpawnedWeapon->SetOwner(Character);
+}
+
+void UCombatComponent::DestroyWeapon() {
+	if (SpawnedWeapon) SpawnedWeapon->Destroy();
 }
 
 void UCombatComponent::SetAiming(bool bInAiming) {
@@ -119,26 +143,37 @@ void UCombatComponent::MultiShoot_Implementation() {
 }
 
 void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
-	FVector2D ViewportSize;
+	TraceHitResult = FHitResult();
 
-	GEngine->GameViewport->GetViewportSize(ViewportSize);
+	if (!Character) return;
 
-	FVector2D CrosshairLocation(ViewportSize.X / 2.0f, ViewportSize.Y / 2.0f);
+	if (!Character->IsLocallyControlled()) return;
+
+	APlayerController* PC = Cast<APlayerController>(Character->GetController());
+	if (!PC) return;
+
+	int32 SizeX = 0, SizeY = 0;
+	PC->GetViewportSize(SizeX, SizeY);
+	if (SizeX <= 0 || SizeY <= 0) return;
+
+	const FVector2D CrosshairLocation(SizeX * 0.5f, SizeY * 0.5f);
 
 	FVector CrosshairWorldPos;
 	FVector CrosshairWorldDir;
-	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0), CrosshairLocation, CrosshairWorldPos, CrosshairWorldDir);
+	if (!UGameplayStatics::DeprojectScreenToWorld(PC, CrosshairLocation, CrosshairWorldPos, CrosshairWorldDir))
+		return;
 
-	if (bScreenToWorld) {
-		FVector Start = CrosshairWorldPos;
-		FVector End = Start + CrosshairWorldDir * TRACE_LENGTH;
+	const FVector Start = CrosshairWorldPos;
+	const FVector End = Start + CrosshairWorldDir * TRACE_LENGTH;
 
-		GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECollisionChannel::ECC_Visibility);
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(Character);
+	if (SpawnedWeapon) Params.AddIgnoredActor(SpawnedWeapon);
 
-		if (!TraceHitResult.bBlockingHit)
-		{
-			TraceHitResult.ImpactPoint = End;
-		}
+	GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, Params);
+
+	if (!TraceHitResult.bBlockingHit) {
+		TraceHitResult.ImpactPoint = End;
 	}
 }
 
@@ -187,13 +222,33 @@ bool UCombatComponent::CanShoot() {
 }
 
 void UCombatComponent::OnRep_SpawnedWeapon() {
-	if (Character && SpawnedWeapon) {
-		const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
-		if (HandSocket) {
-			HandSocket->AttachActor(SpawnedWeapon, Character->GetMesh());
-		}
-		SpawnedWeapon->SetOwner(Character);
-	}
+	if (!Character || !SpawnedWeapon)
+		return;
+
+	USkeletalMeshComponent* CharMesh = Character->GetMesh();
+	USkeletalMeshComponent* WeaponMesh = SpawnedWeapon->GetWeaponMesh();
+
+	if (!CharMesh || !WeaponMesh)
+		return;
+
+	const FName HandSocket(TEXT("RightHandSocket"));
+	const FName GripSocket(TEXT("GripSocket"));
+
+	const FVector OriginalScale = SpawnedWeapon->GetActorScale3D();
+
+	FTransform GripToRoot = WeaponMesh->GetSocketTransform(GripSocket, RTS_Component).Inverse();
+	FTransform HandWorldTransform = CharMesh->GetSocketTransform(HandSocket, RTS_World);
+
+	FTransform DesiredWeaponTransform = GripToRoot * HandWorldTransform;
+	DesiredWeaponTransform.SetScale3D(FVector(1.f));
+
+	SpawnedWeapon->SetActorTransform(DesiredWeaponTransform);
+
+	SpawnedWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
+
+	SpawnedWeapon->SetActorScale3D(OriginalScale);
+
+	SpawnedWeapon->SetOwner(Character);
 }
 
 void UCombatComponent::OnRep_SemiShotCounter() {
