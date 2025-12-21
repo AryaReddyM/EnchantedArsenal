@@ -35,8 +35,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 }
 
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
-	if (!Character || !Character->HasAuthority())
-		return;
+	if (!Character || !Character->HasAuthority()) return;
 
 	if (SpawnedWeapon) {
 		SpawnedWeapon->Destroy();
@@ -45,55 +44,34 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 
 	TSubclassOf<AWeapon> WeaponClass = nullptr;
 	switch (WeaponType) {
-	case EWeaponType::EWT_Rifle:   WeaponClass = Rifle; break;
+	case EWeaponType::EWT_Rifle:   WeaponClass = Rifle;   break;
 	case EWeaponType::EWT_Shotgun: WeaponClass = Shotgun; break;
-	case EWeaponType::EWT_SMG:     WeaponClass = SMG; break;
-	case EWeaponType::EWT_Pistol:  WeaponClass = Pistol; break;
+	case EWeaponType::EWT_SMG:     WeaponClass = SMG;     break;
+	case EWeaponType::EWT_Pistol:  WeaponClass = Pistol;  break;
 	default: return;
 	}
-	if (!WeaponClass)
-		return;
+	if (!WeaponClass) return;
 
 	FActorSpawnParameters Params;
 	Params.Owner = Character;
 	Params.Instigator = Character;
 
 	AWeapon* NewWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass, FTransform::Identity, Params);
-	if (!NewWeapon)
-		return;
+	if (!NewWeapon) return;
 
 	USkeletalMeshComponent* CharMesh = Character->GetMesh();
-	USkeletalMeshComponent* WeaponMesh = NewWeapon->GetWeaponMesh();
-
-	if (!CharMesh || !WeaponMesh) {
+	if (!CharMesh || !NewWeapon->GripPoint) {
 		NewWeapon->Destroy();
 		return;
 	}
 
 	const FName HandSocket(TEXT("RightHandSocket"));
-	const FName GripSocket(TEXT("GripSocket"));
+	NewWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::KeepRelativeTransform, HandSocket);
 
-	if (!WeaponMesh->DoesSocketExist(GripSocket)) {
-		NewWeapon->Destroy();
-		return;
-	}
-
-	const FVector OriginalScale = NewWeapon->GetActorScale3D();
-
-	FTransform GripToRoot = WeaponMesh->GetSocketTransform(GripSocket, RTS_Component).Inverse();
-	FTransform HandWorldTransform = CharMesh->GetSocketTransform(HandSocket, RTS_World);
-
-	FTransform DesiredWeaponTransform = GripToRoot * HandWorldTransform;
-	DesiredWeaponTransform.SetScale3D(FVector(1.f));
-
-	NewWeapon->SetActorTransform(DesiredWeaponTransform);
-
-	NewWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
-
-	NewWeapon->SetActorScale3D(OriginalScale);
+	const FTransform GripRelativeTransform = NewWeapon->GripPoint->GetRelativeTransform();
+	NewWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
 
 	SpawnedWeapon = NewWeapon;
-	SpawnedWeapon->SetOwner(Character);
 }
 
 void UCombatComponent::DestroyWeapon() {
@@ -222,33 +200,16 @@ bool UCombatComponent::CanShoot() {
 }
 
 void UCombatComponent::OnRep_SpawnedWeapon() {
-	if (!Character || !SpawnedWeapon)
-		return;
+	if (!Character || !SpawnedWeapon || !SpawnedWeapon->GripPoint) return;
 
 	USkeletalMeshComponent* CharMesh = Character->GetMesh();
-	USkeletalMeshComponent* WeaponMesh = SpawnedWeapon->GetWeaponMesh();
-
-	if (!CharMesh || !WeaponMesh)
-		return;
+	if (!CharMesh) return;
 
 	const FName HandSocket(TEXT("RightHandSocket"));
-	const FName GripSocket(TEXT("GripSocket"));
+	SpawnedWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::KeepRelativeTransform, HandSocket);
 
-	const FVector OriginalScale = SpawnedWeapon->GetActorScale3D();
-
-	FTransform GripToRoot = WeaponMesh->GetSocketTransform(GripSocket, RTS_Component).Inverse();
-	FTransform HandWorldTransform = CharMesh->GetSocketTransform(HandSocket, RTS_World);
-
-	FTransform DesiredWeaponTransform = GripToRoot * HandWorldTransform;
-	DesiredWeaponTransform.SetScale3D(FVector(1.f));
-
-	SpawnedWeapon->SetActorTransform(DesiredWeaponTransform);
-
-	SpawnedWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
-
-	SpawnedWeapon->SetActorScale3D(OriginalScale);
-
-	SpawnedWeapon->SetOwner(Character);
+	const FTransform GripRelativeTransform = SpawnedWeapon->GripPoint->GetRelativeTransform();
+	SpawnedWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
 }
 
 void UCombatComponent::OnRep_SemiShotCounter() {

@@ -52,6 +52,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	USceneComponent* GripPoint;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties", ReplicatedUsing = OnRep_WeaponType)
 	EWeaponType WeaponType;
 

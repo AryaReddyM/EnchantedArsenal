@@ -10,6 +10,9 @@ AWeapon::AWeapon() {
 	
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
+
+	GripPoint = CreateDefaultSubobject<USceneComponent>(TEXT("GripPoint"));
+	GripPoint->SetupAttachment(RootComponent);
 	
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
