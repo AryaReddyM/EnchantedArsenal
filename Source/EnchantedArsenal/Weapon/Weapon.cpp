@@ -7,12 +7,15 @@
 AWeapon::AWeapon() {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
+
+	BaseRoot = CreateDefaultSubobject<USceneComponent>(TEXT("BaseRoot"));
+	SetRootComponent(BaseRoot);
 	
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
-	SetRootComponent(WeaponMesh);
+	WeaponMesh->SetupAttachment(RootComponent);
 
 	GripPoint = CreateDefaultSubobject<USceneComponent>(TEXT("GripPoint"));
-	GripPoint->SetupAttachment(RootComponent);
+	GripPoint->SetupAttachment(WeaponMesh);
 	
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);

@@ -1,0 +1,32 @@
+Begin Object Class=/Script/Engine.AnimMontage Name="AM_MM_Rifle_Fire" ExportPath="/Script/Engine.AnimMontage'/Game/Weapons/Rifle/Animations/AM_MM_Rifle_Fire.AM_MM_Rifle_Fire'"
+   Begin Object Class=/Game/Characters/Heroes/Mannequin/Animations/AnimNotifies/AN_PlayWeaponMontage.AN_PlayWeaponMontage_C Name="AN_PlayWeaponMontage_Temp_C_0" ExportPath="/Game/Characters/Heroes/Mannequin/Animations/AnimNotifies/AN_PlayWeaponMontage.AN_PlayWeaponMontage_C'/Game/Weapons/Rifle/Animations/AM_MM_Rifle_Fire.AM_MM_Rifle_Fire:AN_PlayWeaponMontage_Temp_C_0'"
+   End Object
+   Begin Object Class=/Script/UnrealEd.SceneThumbnailInfo Name="SceneThumbnailInfo_0" ExportPath="/Script/UnrealEd.SceneThumbnailInfo'/Game/Weapons/Rifle/Animations/AM_MM_Rifle_Fire.AM_MM_Rifle_Fire:SceneThumbnailInfo_0'"
+   End Object
+   Begin Object Class=/Script/Engine.AnimDataModel Name="AnimDataModel" ExportPath="/Script/Engine.AnimDataModel'/Game/Weapons/Rifle/Animations/AM_MM_Rifle_Fire.AM_MM_Rifle_Fire:AnimDataModel'"
+   End Object
+   Begin Object Name="AN_PlayWeaponMontage_Temp_C_0" ExportPath="/Game/Characters/Heroes/Mannequin/Animations/AnimNotifies/AN_PlayWeaponMontage.AN_PlayWeaponMontage_C'/Game/Weapons/Rifle/Animations/AM_MM_Rifle_Fire.AM_MM_Rifle_Fire:AN_PlayWeaponMontage_Temp_C_0'"
+      MontageToPlay="/Script/Engine.AnimMontage'/Game/Weapons/Rifle/Animations/AM_Weap_Rifle_Fire.AM_Weap_Rifle_Fire'"
+   End Object
+   Begin Object Name="SceneThumbnailInfo_0" ExportPath="/Script/UnrealEd.SceneThumbnailInfo'/Game/Weapons/Rifle/Animations/AM_MM_Rifle_Fire.AM_MM_Rifle_Fire:SceneThumbnailInfo_0'"
+   End Object
+   Begin Object Name="AnimDataModel" ExportPath="/Script/Engine.AnimDataModel'/Game/Weapons/Rifle/Animations/AM_MM_Rifle_Fire.AM_MM_Rifle_Fire:AnimDataModel'"
+      NumberOfFrames=31980
+      NumberOfKeys=31981
+      bPopulated=True
+   End Object
+   BlendIn=(BlendTime=0.000000,BlendOption=Cubic)
+   BlendOut=(BlendOption=Cubic)
+   CompositeSections(0)=(SectionName="Default",LinkedMontage="/Script/Engine.AnimMontage'AM_MM_Rifle_Fire'",SegmentIndex=0,SegmentLength=0.533000,LinkedSequence="/Script/Engine.AnimSequence'/Game/Characters/Heroes/Mannequin/Animations/Actions/MM_Rifle_Fire.MM_Rifle_Fire'")
+   SlotAnimTracks(0)=(SlotName="FullBodyAdditivePreAim",AnimTrack=(AnimSegments=((AnimReference="/Script/Engine.AnimSequence'/Game/Characters/Heroes/Mannequin/Animations/Actions/MM_Rifle_Fire.MM_Rifle_Fire'",AnimEndTime=0.533000))))
+   PreviewBasePose="/Script/Engine.AnimSequence'/Game/Characters/Heroes/Mannequin/Animations/Locomotion/Rifle/MM_Rifle_Idle_Hipfire.MM_Rifle_Idle_Hipfire'"
+   CommonTargetFrameRate=(Numerator=30)
+   Notifies(0)=(TriggerTimeOffset=0.000100,EndTriggerTimeOffset=0.000100,NotifyName="AN_PlayWeaponMontage_Temp_C",Notify="/Game/Characters/Heroes/Mannequin/Animations/AnimNotifies/AN_PlayWeaponMontage.AN_PlayWeaponMontage_C'AN_PlayWeaponMontage_Temp_C_0'",Guid=B5E0EDD44FF0520F6A7C4A8030DA448A,LinkedMontage="/Script/Engine.AnimMontage'AM_MM_Rifle_Fire'",SegmentIndex=0,SegmentLength=0.533000,LinkedSequence="/Script/Engine.AnimSequence'/Game/Characters/Heroes/Mannequin/Animations/Actions/MM_Rifle_Fire.MM_Rifle_Fire'")
+   Notifies(1)=(NotifyName="SaveAttack",EndLink=(LinkValue=0.457375),Guid=4C1D310149F666A081A0E3AF4D02CBA7,LinkedMontage="/Script/Engine.AnimMontage'AM_MM_Rifle_Fire'",SegmentIndex=0,LinkMethod=Proportional,CachedLinkMethod=Proportional,SegmentLength=0.533000,LinkValue=0.858115,LinkedSequence="/Script/Engine.AnimSequence'/Game/Characters/Heroes/Mannequin/Animations/Actions/MM_Rifle_Fire.MM_Rifle_Fire'")
+   Notifies(2)=(TriggerTimeOffset=-0.000100,EndTriggerTimeOffset=-0.000100,NotifyName="ResetCombo",EndLink=(LinkValue=0.533000),Guid=69BDBFB6486BC2EE29F98898AE0ED7BE,LinkedMontage="/Script/Engine.AnimMontage'AM_MM_Rifle_Fire'",SegmentIndex=0,SegmentLength=0.533000,LinkValue=0.533000,LinkedSequence="/Script/Engine.AnimSequence'/Game/Characters/Heroes/Mannequin/Animations/Actions/MM_Rifle_Fire.MM_Rifle_Fire'")
+   SequenceLength=0.533000
+   AnimNotifyTracks(0)=(TrackName="1",TrackColor=(R=0.500000,G=0.500000,B=0.500000,A=1.000000))
+   DataModelInterface=AnimDataModel'AM_MM_Rifle_Fire:AnimDataModel'
+   Skeleton="/Script/Engine.Skeleton'/Game/Characters/Heroes/Mannequin/Meshes/SK_Mannequin.SK_Mannequin'"
+   ThumbnailInfo="/Script/UnrealEd.SceneThumbnailInfo'SceneThumbnailInfo_0'"
+End Object

@@ -253,31 +253,71 @@ AWeapon* AArsenalCharacter::GetWeapon() {
 	return CombatComp->SpawnedWeapon;
 }
 
-void AArsenalCharacter::PlayShootMontage(bool bAiming) {
-	if (CombatComp == nullptr || CombatComp->SpawnedWeapon == nullptr) return;
+void AArsenalCharacter::PlayShootMontage(EWeaponType WeaponType) {
+	if (!CombatComp || !CombatComp->SpawnedWeapon) return;
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+	if (!AnimInstance) return;
 
-	const bool bHasAim = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleAim")) != INDEX_NONE;
-	const bool bHasHip = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleHip")) != INDEX_NONE;
+	UAnimMontage* CurrentMontage = nullptr;
 
-	if (AnimInstance && ShootWeaponMontage) {
+	switch (WeaponType) {
+	case EWeaponType::EWT_Rifle:
+		CurrentMontage = ShootAutoMontage;
+		break;
+	case EWeaponType::EWT_SMG:     
+		CurrentMontage = ShootAutoMontage;
+		break;
+	case EWeaponType::EWT_Shotgun: 
+		CurrentMontage = ShootShotgunMontage;
+		break;
+	case EWeaponType::EWT_Pistol:  
+		CurrentMontage = ShootPistolMontage;
+		break;
+	default:
+		break;
+	}
 
-		FName SectionName;
+	if (!CurrentMontage) {
+		return;
+	}
 
-		if (bAiming) {
-			SectionName = FName("RifleAim");
-		}
-		else {
-			SectionName = FName("RifleHip");
-		}
+	if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun || CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) {
+		AnimInstance->Montage_Play(CurrentMontage);
+		return;
+	}
 
-		if (!AnimInstance->Montage_IsPlaying(ShootWeaponMontage)) {
-			AnimInstance->Montage_Play(ShootWeaponMontage);
-			AnimInstance->Montage_JumpToSection(SectionName);
-		}
+	if (!AnimInstance->Montage_IsPlaying(CurrentMontage)) {
+		AnimInstance->Montage_Play(CurrentMontage);
 	}
 }
+
+
+//void AArsenalCharacter::PlayEquipMontage(EWeaponType WeaponType) {
+//	if (CombatComp == nullptr || CombatComp->SpawnedWeapon == nullptr) return;
+//
+//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+//
+//	const bool bHasAim = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleAim")) != INDEX_NONE;
+//	const bool bHasHip = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleHip")) != INDEX_NONE;
+//
+//	if (AnimInstance && ShootWeaponMontage) {
+//
+//		FName SectionName;
+//
+//		if (bAiming) {
+//			SectionName = FName("RifleAim");
+//		}
+//		else {
+//			SectionName = FName("RifleHip");
+//		}
+//
+//		if (!AnimInstance->Montage_IsPlaying(ShootWeaponMontage)) {
+//			AnimInstance->Montage_Play(ShootWeaponMontage);
+//			AnimInstance->Montage_JumpToSection(SectionName);
+//		}
+//	}
+//}
 
 void AArsenalCharacter::HandleDeath() {
 	Destroy();

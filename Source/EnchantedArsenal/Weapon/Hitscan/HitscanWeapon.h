@@ -24,7 +24,7 @@ public:
 	bool CheckForHeadshot(AActor* HitActor, FVector ImpactPoint);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayShootAnimation(bool bAiming);
+	void MulticastPlayShootAnimation();
 
 protected:
 	FTimerHandle ShootTimerHandle;

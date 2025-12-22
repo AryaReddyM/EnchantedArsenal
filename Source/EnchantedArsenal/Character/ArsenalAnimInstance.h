@@ -2,10 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/AimOffsetBlendSpace.h"
 #include "ArsenalAnimInstance.generated.h"
 
 class AArsenalCharacter;
 class AWeapon;
+enum class EWeaponType :uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API UArsenalAnimInstance : public UAnimInstance {
@@ -32,6 +34,9 @@ private:
 	bool bWeaponEquipped;
 
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = true))
+	int WeaponTypeIndex;
 	
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bIsCrouching;

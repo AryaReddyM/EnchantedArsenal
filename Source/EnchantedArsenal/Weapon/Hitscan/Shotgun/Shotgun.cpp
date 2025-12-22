@@ -7,19 +7,20 @@
 
 void AShotgun::Shoot() {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
-    if (!InstigatorPawn) return;
+    if (!InstigatorPawn || !InstigatorPawn->CombatComp) return;
 
     const float CurrentTime = GetWorld()->GetTimeSeconds();
 
     if (CurrentTime - LastFireTime < ShootRate) return;
 
-    if (FireType == EFireType::EWT_SemiAuto && InstigatorPawn->CombatComp && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
+    if (FireType == EFireType::EWT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
 
     LastFireTime = CurrentTime;
+
     HitLocations.Reset();
 
     if (InstigatorPawn->IsLocallyControlled()) {
-        InstigatorPawn->PlayShootMontage(InstigatorPawn->CombatComp->bAiming);
+        InstigatorPawn->PlayShootMontage(WeaponType);
     }
 
     FHitResult CrosshairHitResult;
@@ -44,18 +45,20 @@ void AShotgun::Shoot() {
     const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
     if (!MuzzleFlashSocket) return;
 
+    bool bHitSomething = false;
     MuzzleLocation = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
 
     for (const FVector& ImpactPoint : HitLocations) {
         if (InstigatorPawn->IsLocallyControlled()) {
+            bHitSomething = CrosshairHitResult.bBlockingHit;
             LocalShootEffects(MuzzleLocation, ImpactPoint, CrosshairHitResult);
         }
 
         if (!HasAuthority()) {
-            ServerShoot(true, ImpactPoint);
+            ServerShoot(bHitSomething, ImpactPoint);
         }
         else {
-            ServerProcessShot(true, ImpactPoint);
+            ServerProcessShot(bHitSomething, ImpactPoint);
         }
     }
 

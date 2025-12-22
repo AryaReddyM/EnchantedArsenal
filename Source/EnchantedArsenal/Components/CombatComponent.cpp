@@ -114,7 +114,7 @@ void UCombatComponent::MultiShoot_Implementation() {
 
 	if (Character) {
 		if (SpawnedWeapon->FireType == EFireType::EWT_Auto) {
-			Character->PlayShootMontage(bAiming);
+			Character->PlayShootMontage(SpawnedWeapon->WeaponType);
 		}
 		SpawnedWeapon->Shoot();
 	}

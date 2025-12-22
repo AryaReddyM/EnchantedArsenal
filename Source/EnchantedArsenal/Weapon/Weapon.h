@@ -50,12 +50,15 @@ public:
 	void SetWeaponType(EWeaponType InWeaponState);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
+	USceneComponent* BaseRoot;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	USceneComponent* GripPoint;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties", ReplicatedUsing = OnRep_WeaponType)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", ReplicatedUsing = OnRep_WeaponType)
 	EWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", ReplicatedUsing = OnRep_FireType)

@@ -17,6 +17,7 @@ void AHitscanWeapon::Shoot() {
     if (!InstigatorPawn || !InstigatorPawn->CombatComp) return;
 
     const float CurrentTime = GetWorld()->GetTimeSeconds();
+
     if (CurrentTime - LastFireTime < ShootRate) return;
 
     if (FireType == EFireType::EWT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
@@ -24,25 +25,24 @@ void AHitscanWeapon::Shoot() {
     LastFireTime = CurrentTime;
 
     if (InstigatorPawn->IsLocallyControlled()) {
-        InstigatorPawn->PlayShootMontage(InstigatorPawn->CombatComp->bAiming);
+        InstigatorPawn->PlayShootMontage(WeaponType);
 
         FHitResult CrosshairHit;
         InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHit);
+
         const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
         if (!MuzzleSocket) return;
-        FVector MuzzleLoc = MuzzleSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
+        MuzzleLocation = MuzzleSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
 
-        LocalShootEffects(MuzzleLoc, CrosshairHit.bBlockingHit ? CrosshairHit.ImpactPoint : CrosshairHit.TraceEnd, CrosshairHit);
+        LocalShootEffects(MuzzleLocation, CrosshairHit.bBlockingHit ? CrosshairHit.ImpactPoint : CrosshairHit.TraceEnd, CrosshairHit);
     }
 
     bool bHitSomething = false;
     FVector ImpactPoint = FVector::ZeroVector;
-    {
-        FHitResult CrosshairHit;
-        InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHit);
-        bHitSomething = CrosshairHit.bBlockingHit;
-        ImpactPoint = bHitSomething ? CrosshairHit.ImpactPoint : CrosshairHit.TraceEnd;
-    }
+    FHitResult CrosshairHit;
+    InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHit);
+    bHitSomething = CrosshairHit.bBlockingHit;
+    ImpactPoint = bHitSomething ? CrosshairHit.ImpactPoint : CrosshairHit.TraceEnd;
 
     if (!HasAuthority()) {
         ServerShoot(bHitSomething, ImpactPoint);
@@ -52,6 +52,10 @@ void AHitscanWeapon::Shoot() {
     }
 
     InstigatorPawn->AddRecoil(RecoilMin, RecoilMax);
+
+    if (InstigatorPawn->CombatComp) {
+        InstigatorPawn->CombatComp->SetSemiCounter(InstigatorPawn->CombatComp->SemiShotCounter + 1);
+    }
 }
 
 void AHitscanWeapon::ServerShoot_Implementation(bool bHitSomething, const FVector_NetQuantize& ImpactPoint) {
@@ -59,11 +63,9 @@ void AHitscanWeapon::ServerShoot_Implementation(bool bHitSomething, const FVecto
 
     ServerProcessShot(bHitSomething, ImpactPoint);
 
-    InstigatorPawn->CombatComp->SetSemiCounter(InstigatorPawn->CombatComp->SemiShotCounter + 1);
-
     MulticastImpactEffects(ImpactPoint);
 
-    MulticastPlayShootAnimation(InstigatorPawn->CombatComp->bAiming);
+    MulticastPlayShootAnimation();
 }
 
 void AHitscanWeapon::ServerProcessShot(bool bHitSomething, const FVector& ImpactPoint) {
@@ -165,9 +167,9 @@ bool AHitscanWeapon::CheckForHeadshot(AActor* HitActor, FVector ImpactPoint) {
     return false;
 }
 
-void AHitscanWeapon::MulticastPlayShootAnimation_Implementation(bool bAiming) {
+void AHitscanWeapon::MulticastPlayShootAnimation_Implementation() {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
     if (InstigatorPawn) {
-        InstigatorPawn->PlayShootMontage(bAiming);
+        InstigatorPawn->PlayShootMontage(WeaponType);
     }
 }

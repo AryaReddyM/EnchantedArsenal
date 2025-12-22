@@ -74,4 +74,8 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
 	}
+
+	if (EquippedWeapon) {
+		WeaponTypeIndex = static_cast<int>(EquippedWeapon->WeaponType);
+	}
 }

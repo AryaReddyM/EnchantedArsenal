@@ -14,6 +14,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputComponent;
 class AWeapon;
+enum class EWeaponType : uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter {
@@ -54,7 +55,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerEquipPistol();
 
-
 	void Aim();
 	void AimReleased();
 	void Shoot();
@@ -67,7 +67,8 @@ public:
 
 	AWeapon* GetWeapon();
 
-	void PlayShootMontage(bool bAiming);
+	void PlayShootMontage(EWeaponType WeaponType);
+	//void PlayEquipMontage(EWeaponType WeaponType);
 
 	UFUNCTION()
 	void HandleDeath();
@@ -130,7 +131,11 @@ public:
 	UInputAction* ShootAction;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
-	UAnimMontage* ShootWeaponMontage;
+	UAnimMontage* ShootAutoMontage;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ShootShotgunMontage;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ShootPistolMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float HipCameraBoomLength = 300.0f;
