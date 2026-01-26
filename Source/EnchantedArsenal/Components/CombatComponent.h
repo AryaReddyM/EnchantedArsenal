@@ -51,8 +51,6 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerResetSemiCounter();
 
-	bool CanShoot();
-
 	AArsenalCharacter* Character;
 	AArsenalPlayerController* PlayerController;
 	AArsenalHUD* HUD;
@@ -83,13 +81,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed = 450.0f;
 
-	bool bShootButtonPressed;
-
-	float LastEquipTime = -1000.f;
-
 	UPROPERTY(ReplicatedUsing = OnRep_SemiShotCounter)
 	int SemiShotCounter = 0;
 
 	UFUNCTION()
 	void OnRep_SemiShotCounter();
+
+	bool bIsRecentlyEquipped = false;
 };

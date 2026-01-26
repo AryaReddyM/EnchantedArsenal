@@ -72,6 +72,8 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 	NewWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
 
 	SpawnedWeapon = NewWeapon;
+
+	Character->PlayEquipMontage(WeaponType);
 }
 
 void UCombatComponent::DestroyWeapon() {
@@ -98,9 +100,7 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bInAiming) {
 void UCombatComponent::Shoot(bool bTriggered) {
 	if (!SpawnedWeapon) return;
 
-	bShootButtonPressed = bTriggered;
-
-	if (bShootButtonPressed) {
+	if (bTriggered) {
 		ServerShoot();
 	}
 }
@@ -110,14 +110,34 @@ void UCombatComponent::ServerShoot_Implementation() {
 }
 
 void UCombatComponent::MultiShoot_Implementation() {
-	if (!SpawnedWeapon) return;
+	FString RecentString = bIsRecentlyEquipped ? "Is Recently Equipped" : "Not Recently Equipped";
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, RecentString);
 
-	if (Character) {
-		if (SpawnedWeapon->FireType == EFireType::EWT_Auto) {
-			Character->PlayShootMontage(SpawnedWeapon->WeaponType);
-		}
-		SpawnedWeapon->Shoot();
+	if (!SpawnedWeapon || !Character) return;
+
+	if (Character->GetMesh()->GetAnimInstance()->Montage_IsPlaying(Character->EquipMontage)) {
+		return;
 	}
+
+	if (bIsRecentlyEquipped) {
+		const float CurrentTime = GetWorld()->GetTimeSeconds();
+		float LastEquipTime = -1000.0f;
+
+		if (CurrentTime - LastEquipTime < 20.0f) {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "In Delay" + FString::SanitizeFloat(CurrentTime - LastEquipTime));
+			return;
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Done Delay" + FString::SanitizeFloat(CurrentTime - LastEquipTime));
+		}
+
+		LastEquipTime = CurrentTime;
+	}
+
+	if (SpawnedWeapon->FireType == EFireType::EWT_Auto) {
+		Character->PlayShootMontage(SpawnedWeapon->WeaponType);
+	}
+	SpawnedWeapon->Shoot();
 }
 
 void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
@@ -191,14 +211,6 @@ bool UCombatComponent::ServerResetSemiCounter_Validate() {
 	return true;
 }
 
-bool UCombatComponent::CanShoot() {
-	if (!SpawnedWeapon) return false;
-
-	const float CurrentTime = GetWorld()->GetTimeSeconds();
-
-	return (CurrentTime - LastEquipTime) >= SpawnedWeapon->EquipDelay;
-}
-
 void UCombatComponent::OnRep_SpawnedWeapon() {
 	if (!Character || !SpawnedWeapon || !SpawnedWeapon->GripPoint) return;
 
@@ -210,6 +222,8 @@ void UCombatComponent::OnRep_SpawnedWeapon() {
 
 	const FTransform GripRelativeTransform = SpawnedWeapon->GripPoint->GetRelativeTransform();
 	SpawnedWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
+
+	Character->PlayEquipMontage(SpawnedWeapon->WeaponType);
 }
 
 void UCombatComponent::OnRep_SemiShotCounter() {

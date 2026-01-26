@@ -113,5 +113,5 @@ public:
 	float LastFireTime = -1000.f;
 
 	UPROPERTY(EditAnywhere)
-	float EquipDelay;
+	float EquipDelay = 2.0f;
 };

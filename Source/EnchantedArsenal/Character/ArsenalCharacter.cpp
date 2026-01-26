@@ -146,6 +146,13 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 void AArsenalCharacter::EquipRifle() {
 	if (CombatComp) {
 		if (HasAuthority()) {
+			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
+
+			CombatComp->bIsRecentlyEquipped = true;
+
+			FString RecentString = CombatComp->bIsRecentlyEquipped ? "Is Recently Equipped" : "Not Recently Equipped";
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, RecentString);
+
 			CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
 		}
 		else {
@@ -155,6 +162,10 @@ void AArsenalCharacter::EquipRifle() {
 }
 void AArsenalCharacter::ServerEquipRifle_Implementation() {
 	if (CombatComp) {
+		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
+
+		CombatComp->bIsRecentlyEquipped = true;
+
 		CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
 	}
 }
@@ -162,6 +173,10 @@ void AArsenalCharacter::ServerEquipRifle_Implementation() {
 void AArsenalCharacter::EquipSMG() {
 	if (CombatComp) {
 		if (HasAuthority()) {
+			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
+
+			CombatComp->bIsRecentlyEquipped = true;
+
 			CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
 		}
 		else {
@@ -171,6 +186,10 @@ void AArsenalCharacter::EquipSMG() {
 }
 void AArsenalCharacter::ServerEquipSMG_Implementation() {
 	if (CombatComp) {
+		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
+
+		CombatComp->bIsRecentlyEquipped = true;
+
 		CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
 	}
 }
@@ -178,6 +197,10 @@ void AArsenalCharacter::ServerEquipSMG_Implementation() {
 void AArsenalCharacter::EquipShotgun() {
 	if (CombatComp) {
 		if (HasAuthority()) {
+			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
+
+			CombatComp->bIsRecentlyEquipped = true;
+
 			CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
 		}
 		else {
@@ -187,6 +210,10 @@ void AArsenalCharacter::EquipShotgun() {
 }
 void AArsenalCharacter::ServerEquipShotgun_Implementation() {
 	if (CombatComp) {
+		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
+
+		CombatComp->bIsRecentlyEquipped = true;
+
 		CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
 	}
 }
@@ -195,6 +222,10 @@ void AArsenalCharacter::ServerEquipShotgun_Implementation() {
 void AArsenalCharacter::EquipPistol() {
 	if (CombatComp) {
 		if (HasAuthority()) {
+			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
+
+			CombatComp->bIsRecentlyEquipped = true;
+
 			CombatComp->EquipWeapon(EWeaponType::EWT_Pistol);
 		}
 		else {
@@ -204,6 +235,10 @@ void AArsenalCharacter::EquipPistol() {
 }
 void AArsenalCharacter::ServerEquipPistol_Implementation() {
 	if (CombatComp) {
+		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
+
+		CombatComp->bIsRecentlyEquipped = true;
+ 
 		CombatComp->EquipWeapon(EWeaponType::EWT_Pistol);
 	}
 }
@@ -221,7 +256,7 @@ void AArsenalCharacter::AimReleased() {
 }
 
 void AArsenalCharacter::Shoot() {
-	if (CombatComp && CombatComp->CanShoot()) {
+	if (CombatComp) {
 		CombatComp->Shoot(true);
 	}
 }
@@ -293,31 +328,37 @@ void AArsenalCharacter::PlayShootMontage(EWeaponType WeaponType) {
 }
 
 
-//void AArsenalCharacter::PlayEquipMontage(EWeaponType WeaponType) {
-//	if (CombatComp == nullptr || CombatComp->SpawnedWeapon == nullptr) return;
-//
-//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-//
-//	const bool bHasAim = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleAim")) != INDEX_NONE;
-//	const bool bHasHip = ShootWeaponMontage && ShootWeaponMontage->GetSectionIndex(FName("RifleHip")) != INDEX_NONE;
-//
-//	if (AnimInstance && ShootWeaponMontage) {
-//
-//		FName SectionName;
-//
-//		if (bAiming) {
-//			SectionName = FName("RifleAim");
-//		}
-//		else {
-//			SectionName = FName("RifleHip");
-//		}
-//
-//		if (!AnimInstance->Montage_IsPlaying(ShootWeaponMontage)) {
-//			AnimInstance->Montage_Play(ShootWeaponMontage);
-//			AnimInstance->Montage_JumpToSection(SectionName);
-//		}
-//	}
-//}
+void AArsenalCharacter::PlayEquipMontage(EWeaponType WeaponType) {
+	if (!CombatComp || !CombatComp->SpawnedWeapon) return;
+
+	UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+	if (!AnimInstance) return;
+
+	switch (WeaponType) {
+	case EWeaponType::EWT_Rifle:
+		EquipMontage = EquipAutoMontage;
+		break;
+	case EWeaponType::EWT_SMG:
+		EquipMontage = EquipAutoMontage;
+		break;
+	case EWeaponType::EWT_Shotgun:
+		EquipMontage = EquipShotgunMontage;
+		break;
+	case EWeaponType::EWT_Pistol:
+		EquipMontage = EquipPistolMontage;
+		break;
+	default:
+		break;
+	}
+
+	if (!EquipMontage) {
+		return;
+	}
+
+	if (!AnimInstance->Montage_IsPlaying(EquipMontage)) {
+		AnimInstance->Montage_Play(EquipMontage);
+	}
+}
 
 void AArsenalCharacter::HandleDeath() {
 	Destroy();
