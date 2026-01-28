@@ -19,6 +19,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, SpawnedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
+	DOREPLIFETIME(UCombatComponent, bShooting);
 	DOREPLIFETIME(UCombatComponent, SemiShotCounter);
 }
 
@@ -73,7 +74,7 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 
 	SpawnedWeapon = NewWeapon;
 
-	Character->PlayEquipMontage(WeaponType);
+	Character->PlayEquipMontage();
 }
 
 void UCombatComponent::DestroyWeapon() {
@@ -100,43 +101,41 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bInAiming) {
 void UCombatComponent::Shoot(bool bTriggered) {
 	if (!SpawnedWeapon) return;
 
-	if (bTriggered) {
-		ServerShoot();
+	bShooting = bTriggered;
+	ServerShoot(bTriggered);
+
+	if (Character && SpawnedWeapon->FireType != EFireType::EFT_SemiAuto) {
+		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? AimWalkSpeed : BaseWalkSpeed;
 	}
 }
 
-void UCombatComponent::ServerShoot_Implementation() {
-	MultiShoot();
+void UCombatComponent::ServerShoot_Implementation(bool bTriggered) {
+	MultiShoot(bTriggered);
+
+	bShooting = bTriggered;
+	if (Character && SpawnedWeapon->FireType != EFireType::EFT_SemiAuto) {
+		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? AimWalkSpeed : BaseWalkSpeed;
+	}
 }
 
-void UCombatComponent::MultiShoot_Implementation() {
-	FString RecentString = bIsRecentlyEquipped ? "Is Recently Equipped" : "Not Recently Equipped";
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, RecentString);
-
+void UCombatComponent::MultiShoot_Implementation(bool bTriggered) {
 	if (!SpawnedWeapon || !Character) return;
 
-	if (Character->GetMesh()->GetAnimInstance()->Montage_IsPlaying(Character->EquipMontage)) {
-		return;
-	}
+	if (Character->GetMesh()->GetAnimInstance()->Montage_IsPlaying(SpawnedWeapon->EquipMontage) || !bTriggered) return;
 
 	if (bIsRecentlyEquipped) {
 		const float CurrentTime = GetWorld()->GetTimeSeconds();
 		float LastEquipTime = -1000.0f;
 
-		if (CurrentTime - LastEquipTime < 20.0f) {
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "In Delay" + FString::SanitizeFloat(CurrentTime - LastEquipTime));
-			return;
-		}
-		else {
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Done Delay" + FString::SanitizeFloat(CurrentTime - LastEquipTime));
-		}
+		if (CurrentTime - LastEquipTime < 20.0f) return;
 
 		LastEquipTime = CurrentTime;
 	}
 
-	if (SpawnedWeapon->FireType == EFireType::EWT_Auto) {
-		Character->PlayShootMontage(SpawnedWeapon->WeaponType);
+	if (SpawnedWeapon->FireType == EFireType::EFT_Auto) {
+		Character->PlayShootMontage();
 	}
+
 	SpawnedWeapon->Shoot();
 }
 
@@ -223,7 +222,7 @@ void UCombatComponent::OnRep_SpawnedWeapon() {
 	const FTransform GripRelativeTransform = SpawnedWeapon->GripPoint->GetRelativeTransform();
 	SpawnedWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
 
-	Character->PlayEquipMontage(SpawnedWeapon->WeaponType);
+	Character->PlayEquipMontage();
 }
 
 void UCombatComponent::OnRep_SemiShotCounter() {

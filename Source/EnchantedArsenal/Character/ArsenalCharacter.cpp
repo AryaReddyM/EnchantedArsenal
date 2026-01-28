@@ -55,15 +55,6 @@ void AArsenalCharacter::PostInitializeComponents() {
 		HealthComp->MaxHealth = MaxHealth;
 		HealthComp->CurrentHealth = MaxHealth;
 	}
-
-	if (CombatComp) {
-		if (HasAuthority()) {
-			CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
-		}
-		else {
-			ServerEquipRifle();
-		}
-	}
 }
 
 void AArsenalCharacter::BeginPlay() {
@@ -146,12 +137,9 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 void AArsenalCharacter::EquipRifle() {
 	if (CombatComp) {
 		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
+			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
 
 			CombatComp->bIsRecentlyEquipped = true;
-
-			FString RecentString = CombatComp->bIsRecentlyEquipped ? "Is Recently Equipped" : "Not Recently Equipped";
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, RecentString);
 
 			CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
 		}
@@ -162,7 +150,7 @@ void AArsenalCharacter::EquipRifle() {
 }
 void AArsenalCharacter::ServerEquipRifle_Implementation() {
 	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
+		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
 
 		CombatComp->bIsRecentlyEquipped = true;
 
@@ -173,7 +161,7 @@ void AArsenalCharacter::ServerEquipRifle_Implementation() {
 void AArsenalCharacter::EquipSMG() {
 	if (CombatComp) {
 		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
+			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
 
 			CombatComp->bIsRecentlyEquipped = true;
 
@@ -186,7 +174,7 @@ void AArsenalCharacter::EquipSMG() {
 }
 void AArsenalCharacter::ServerEquipSMG_Implementation() {
 	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
+		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
 
 		CombatComp->bIsRecentlyEquipped = true;
 
@@ -197,7 +185,7 @@ void AArsenalCharacter::ServerEquipSMG_Implementation() {
 void AArsenalCharacter::EquipShotgun() {
 	if (CombatComp) {
 		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
+			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
 
 			CombatComp->bIsRecentlyEquipped = true;
 
@@ -210,7 +198,7 @@ void AArsenalCharacter::EquipShotgun() {
 }
 void AArsenalCharacter::ServerEquipShotgun_Implementation() {
 	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
+		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
 
 		CombatComp->bIsRecentlyEquipped = true;
 
@@ -222,7 +210,7 @@ void AArsenalCharacter::ServerEquipShotgun_Implementation() {
 void AArsenalCharacter::EquipPistol() {
 	if (CombatComp) {
 		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
+			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
 
 			CombatComp->bIsRecentlyEquipped = true;
 
@@ -235,7 +223,7 @@ void AArsenalCharacter::EquipPistol() {
 }
 void AArsenalCharacter::ServerEquipPistol_Implementation() {
 	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
+		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
 
 		CombatComp->bIsRecentlyEquipped = true;
  
@@ -278,8 +266,11 @@ bool AArsenalCharacter::IsWeaponEquipped() {
 }
 
 bool AArsenalCharacter::IsAiming() {
-
 	return (CombatComp && CombatComp->bAiming);
+}
+
+bool AArsenalCharacter::IsShooting() {
+	return (CombatComp && CombatComp->bShooting);
 }
 
 AWeapon* AArsenalCharacter::GetWeapon() {
@@ -288,75 +279,31 @@ AWeapon* AArsenalCharacter::GetWeapon() {
 	return CombatComp->SpawnedWeapon;
 }
 
-void AArsenalCharacter::PlayShootMontage(EWeaponType WeaponType) {
+void AArsenalCharacter::PlayShootMontage() {
 	if (!CombatComp || !CombatComp->SpawnedWeapon) return;
 
 	UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
 	if (!AnimInstance) return;
 
-	UAnimMontage* CurrentMontage = nullptr;
-
-	switch (WeaponType) {
-	case EWeaponType::EWT_Rifle:
-		CurrentMontage = ShootAutoMontage;
-		break;
-	case EWeaponType::EWT_SMG:     
-		CurrentMontage = ShootAutoMontage;
-		break;
-	case EWeaponType::EWT_Shotgun: 
-		CurrentMontage = ShootShotgunMontage;
-		break;
-	case EWeaponType::EWT_Pistol:  
-		CurrentMontage = ShootPistolMontage;
-		break;
-	default:
-		break;
-	}
-
-	if (!CurrentMontage) {
+	if (CombatComp->SpawnedWeapon->FireType == EFireType::EFT_SemiAuto) {
+		AnimInstance->Montage_Play(CombatComp->SpawnedWeapon->ShootMontage);
 		return;
 	}
 
-	if (CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun || CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) {
-		AnimInstance->Montage_Play(CurrentMontage);
-		return;
-	}
-
-	if (!AnimInstance->Montage_IsPlaying(CurrentMontage)) {
-		AnimInstance->Montage_Play(CurrentMontage);
+	if (!AnimInstance->Montage_IsPlaying(CombatComp->SpawnedWeapon->ShootMontage)) {
+		AnimInstance->Montage_Play(CombatComp->SpawnedWeapon->ShootMontage);
 	}
 }
 
 
-void AArsenalCharacter::PlayEquipMontage(EWeaponType WeaponType) {
+void AArsenalCharacter::PlayEquipMontage() {
 	if (!CombatComp || !CombatComp->SpawnedWeapon) return;
 
 	UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
 	if (!AnimInstance) return;
 
-	switch (WeaponType) {
-	case EWeaponType::EWT_Rifle:
-		EquipMontage = EquipAutoMontage;
-		break;
-	case EWeaponType::EWT_SMG:
-		EquipMontage = EquipAutoMontage;
-		break;
-	case EWeaponType::EWT_Shotgun:
-		EquipMontage = EquipShotgunMontage;
-		break;
-	case EWeaponType::EWT_Pistol:
-		EquipMontage = EquipPistolMontage;
-		break;
-	default:
-		break;
-	}
-
-	if (!EquipMontage) {
-		return;
-	}
-
-	if (!AnimInstance->Montage_IsPlaying(EquipMontage)) {
-		AnimInstance->Montage_Play(EquipMontage);
+	if (!AnimInstance->Montage_IsPlaying(CombatComp->SpawnedWeapon->EquipMontage)) {
+		AnimInstance->Montage_Play(CombatComp->SpawnedWeapon->EquipMontage);
 	}
 }
 
@@ -369,4 +316,3 @@ void AArsenalCharacter::AddRecoil(float Min, float Max) {
 	TargetRecoilPitch += FMath::RandRange(Min, Max);
 	TargetRecoilYaw += FMath::RandRange(Min, Max);
 }
-

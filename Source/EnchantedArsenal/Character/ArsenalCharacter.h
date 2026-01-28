@@ -64,18 +64,17 @@ public:
 	bool IsWeaponEquipped();
 
 	bool IsAiming();
+	bool IsShooting();
 
 	AWeapon* GetWeapon();
 
-	void PlayShootMontage(EWeaponType WeaponType);
-	void PlayEquipMontage(EWeaponType WeaponType);
+	void PlayShootMontage();
+	void PlayEquipMontage();
 
 	UFUNCTION()
 	void HandleDeath();
 
 	void AddRecoil(float Min, float Max);
-
-	UAnimMontage* EquipMontage = nullptr;
 
 	////////////////////////////////////// Initalize Variables //////////////////////////////////////
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -131,20 +130,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ShootAction;
-
-	UPROPERTY(EditAnywhere, Category = Combat)
-	UAnimMontage* ShootAutoMontage;
-	UPROPERTY(EditAnywhere, Category = Combat)
-	UAnimMontage* ShootShotgunMontage;
-	UPROPERTY(EditAnywhere, Category = Combat)
-	UAnimMontage* ShootPistolMontage;
-
-	UPROPERTY(EditAnywhere, Category = Combat)
-	UAnimMontage* EquipAutoMontage;
-	UPROPERTY(EditAnywhere, Category = Combat)
-	UAnimMontage* EquipShotgunMontage;
-	UPROPERTY(EditAnywhere, Category = Combat)
-	UAnimMontage* EquipPistolMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float HipCameraBoomLength = 300.0f;

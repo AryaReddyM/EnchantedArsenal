@@ -1,7 +1,4 @@
 #include "Weapon.h"
-#include "Components/SphereComponent.h"
-#include "Components/WidgetComponent.h"
-#include "EnchantedArsenal/Character/ArsenalCharacter.h"
 #include "Net/UnrealNetwork.h"
 
 AWeapon::AWeapon() {

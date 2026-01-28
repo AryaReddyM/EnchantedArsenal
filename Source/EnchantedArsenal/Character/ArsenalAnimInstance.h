@@ -8,6 +8,7 @@
 class AArsenalCharacter;
 class AWeapon;
 enum class EWeaponType :uint8;
+class UAnimMontage;
 
 UCLASS()
 class ENCHANTEDARSENAL_API UArsenalAnimInstance : public UAnimInstance {
@@ -33,6 +34,7 @@ private:
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bWeaponEquipped;
 
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	AWeapon* EquippedWeapon;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = true))
@@ -43,9 +45,8 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bAiming;
-
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
-	float YawOffset;
+	bool bShooting;
 
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	float Lean;
@@ -64,4 +65,9 @@ private:
 
 	FRotator CharacterRotationLastFrame;
 	FRotator CharacterRotation;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	float ForwardAxis;
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	float RightAxis;
 };

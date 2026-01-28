@@ -37,9 +37,9 @@ public:
 	
 	void Shoot(bool bTriggered);
 	UFUNCTION(Server, Reliable)
-	void ServerShoot();
+	void ServerShoot(bool bTriggered);
 	UFUNCTION(NetMulticast, Reliable)
-	void MultiShoot();
+	void MultiShoot(bool bTriggered);
 
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
@@ -75,6 +75,8 @@ public:
 
 	UPROPERTY(Replicated)
 	bool bAiming;
+	UPROPERTY(Replicated)
+	bool bShooting;
 
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed = 600.0f;

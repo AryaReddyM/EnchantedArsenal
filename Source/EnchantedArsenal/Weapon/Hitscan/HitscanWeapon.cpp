@@ -20,12 +20,12 @@ void AHitscanWeapon::Shoot() {
 
     if (CurrentTime - LastFireTime < ShootRate) return;
 
-    if (FireType == EFireType::EWT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
+    if (FireType == EFireType::EFT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
 
     LastFireTime = CurrentTime;
 
     if (InstigatorPawn->IsLocallyControlled()) {
-        InstigatorPawn->PlayShootMontage(WeaponType);
+        InstigatorPawn->PlayShootMontage();
 
         FHitResult CrosshairHit;
         InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHit);
@@ -170,6 +170,6 @@ bool AHitscanWeapon::CheckForHeadshot(AActor* HitActor, FVector ImpactPoint) {
 void AHitscanWeapon::MulticastPlayShootAnimation_Implementation() {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
     if (InstigatorPawn) {
-        InstigatorPawn->PlayShootMontage(WeaponType);
+        InstigatorPawn->PlayShootMontage();
     }
 }

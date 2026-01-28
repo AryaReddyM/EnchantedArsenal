@@ -10,16 +10,16 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetWeaponMesh);
 
 UENUM(BlueprintType)
 enum class EFireType : uint8 {
-	EWT_Initial UMETA(DisplayName = "Initial Type"),
-	EWT_Auto UMETA(DisplayName = "Automatic"),
-	EWT_SemiAuto UMETA(DisplayName = "Semi-Automatic"),
+	EFT_Initial UMETA(DisplayName = "Initial Type"),
+	EFT_Auto UMETA(DisplayName = "Automatic"),
+	EFT_SemiAuto UMETA(DisplayName = "Semi-Automatic"),
 
-	EWT_MAX UMETA(DisplayName = "DefaultMax")
+	EFT_MAX UMETA(DisplayName = "DefaultMax")
 };
 
 UENUM(BlueprintType)
 enum class EWeaponType : uint8 {
-	EWT_Initial UMETA(DisplayName = "Initial Type"),
+	EWT_Unarmed UMETA(DisplayName = "Unarmed"),
 	EWT_Rifle UMETA(DisplayName = "Rifle"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_SMG UMETA(DisplayName = "Sub-Machine Gun"),
@@ -114,4 +114,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float EquipDelay = 2.0f;
+
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* ShootMontage;
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* EquipMontage;
 };

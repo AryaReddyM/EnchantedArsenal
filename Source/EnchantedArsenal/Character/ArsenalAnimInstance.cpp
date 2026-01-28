@@ -17,7 +17,7 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		ArsenalCharacter = Cast<AArsenalCharacter>(TryGetPawnOwner());
 	}
 
-	if (ArsenalCharacter == nullptr) return;
+	if (!ArsenalCharacter) return;
 
 	bIsInAir = ArsenalCharacter->GetCharacterMovement()->IsFalling();
 
@@ -29,6 +29,7 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	EquippedWeapon = ArsenalCharacter->GetWeapon();
 
 	bAiming = ArsenalCharacter->IsAiming();
+	bShooting = ArsenalCharacter->IsShooting() && EquippedWeapon->FireType != EFireType::EFT_SemiAuto;
 
 	FVector Velocity = ArsenalCharacter->GetVelocity();
 	float LastSpeed = Speed;
@@ -41,14 +42,18 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 
 	FRotator AimRotation = ArsenalCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(ArsenalCharacter->GetVelocity());
-	float LastYawOffset = YawOffset;
 
-	if (Speed > 0.0f) {
-		YawOffset = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
-	}
-	else {
-		YawOffset = FMath::FInterpTo(LastYawOffset, 0.0f, DeltaSeconds, 2.0f);
-	}
+	const FVector Vel = ArsenalCharacter->GetVelocity();
+	const FVector Vel2D(Vel.X, Vel.Y, 0.f);
+
+	const FVector LocalVel = ArsenalCharacter->GetActorTransform()
+		.InverseTransformVectorNoScale(Vel2D);
+
+	const float ForwardAxisTarget = FMath::Clamp(LocalVel.X / 600.f, -1.f, 1.f);
+	const float RightAxisTarget = FMath::Clamp(LocalVel.Y / 600.f, -1.f, 1.f);
+
+	ForwardAxis = FMath::FInterpTo(ForwardAxis, ForwardAxisTarget, DeltaSeconds, 10.f);
+	RightAxis = FMath::FInterpTo(RightAxis, RightAxisTarget, DeltaSeconds, 10.f);
 
 	CharacterRotationLastFrame = CharacterRotation;
 	CharacterRotation = ArsenalCharacter->GetActorRotation();
@@ -73,9 +78,5 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		ArsenalCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
-	}
-
-	if (EquippedWeapon) {
-		WeaponTypeIndex = static_cast<int>(EquippedWeapon->WeaponType);
 	}
 }

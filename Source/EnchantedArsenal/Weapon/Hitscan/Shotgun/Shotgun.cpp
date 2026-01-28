@@ -13,14 +13,14 @@ void AShotgun::Shoot() {
 
     if (CurrentTime - LastFireTime < ShootRate) return;
 
-    if (FireType == EFireType::EWT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
+    if (FireType == EFireType::EFT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
 
     LastFireTime = CurrentTime;
 
     HitLocations.Reset();
 
     if (InstigatorPawn->IsLocallyControlled()) {
-        InstigatorPawn->PlayShootMontage(WeaponType);
+        InstigatorPawn->PlayShootMontage();
     }
 
     FHitResult CrosshairHitResult;
