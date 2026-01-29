@@ -70,4 +70,8 @@ private:
 	float ForwardAxis;
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	float RightAxis;
+
+	float TimeMoving;
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	bool bMovementHold;
 };

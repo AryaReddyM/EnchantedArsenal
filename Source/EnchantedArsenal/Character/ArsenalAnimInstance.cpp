@@ -79,4 +79,24 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
 	}
+
+	if (Speed > 0) {
+		TimeMoving += DeltaSeconds;
+	}
+	else {
+		TimeMoving = 0;
+	}
+
+	if (TimeMoving > 2.5f) {
+		if (!bShooting && !bAiming) {
+			bMovementHold = true;
+		}
+		else {
+			bMovementHold = false;
+			TimeMoving = 0;
+		}
+	}
+	else {
+		bMovementHold = false;
+	}
 }
