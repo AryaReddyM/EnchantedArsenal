@@ -80,23 +80,26 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
 	}
 
-	if (Speed > 0) {
+	const float MoveEpsilon = 5.f;
+	const bool bIsMoving = Speed > MoveEpsilon;
+
+	if (bIsMoving) {
 		TimeMoving += DeltaSeconds;
 	}
 	else {
-		TimeMoving = 0;
+		TimeMoving = 0.f;
 	}
 
-	if (TimeMoving > 2.5f) {
-		if (!bShooting && !bAiming) {
-			bMovementHold = true;
-		}
-		else {
-			bMovementHold = false;
-			TimeMoving = 0;
-		}
+	const bool bBlockedByCombat = (bShooting || bAiming);
+
+	if (bBlockedByCombat) {
+		bMovementHold = false;
+		TimeMoving = 0.f;
 	}
 	else {
-		bMovementHold = false;
+		bMovementHold = (TimeMoving > 2.5f);
 	}
+
+	FString TimeMoved = bMovementHold ? "Can Movement Hold :)" : "Cannot Movement Hold :(";
+	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TimeMoved);
 }
