@@ -99,7 +99,4 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	else {
 		bMovementHold = (TimeMoving > 2.5f);
 	}
-
-	FString TimeMoved = bMovementHold ? "Can Movement Hold :)" : "Cannot Movement Hold :(";
-	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Blue, TimeMoved);
 }

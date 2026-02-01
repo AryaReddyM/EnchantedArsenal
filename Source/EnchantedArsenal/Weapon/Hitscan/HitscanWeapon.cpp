@@ -9,7 +9,7 @@
 #include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "EnchantedArsenal/Components/CombatComponent.h"
+#include "EnchantedArsenal/Components/CombatComponent.h" 
 #include "Components/BoxComponent.h"
 
 void AHitscanWeapon::Shoot() {
