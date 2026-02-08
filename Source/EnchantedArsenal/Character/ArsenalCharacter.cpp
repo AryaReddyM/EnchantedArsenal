@@ -231,6 +231,7 @@ void AArsenalCharacter::ServerEquipPistol_Implementation() {
 	}
 }
 
+
 void AArsenalCharacter::Aim() {
 	if (CombatComp && CombatComp->SpawnedWeapon) {
 		CombatComp->SetAiming(true);
@@ -294,7 +295,6 @@ void AArsenalCharacter::PlayShootMontage() {
 		AnimInstance->Montage_Play(CombatComp->SpawnedWeapon->ShootMontage);
 	}
 }
-
 
 void AArsenalCharacter::PlayEquipMontage() {
 	if (!CombatComp || !CombatComp->SpawnedWeapon) return;
