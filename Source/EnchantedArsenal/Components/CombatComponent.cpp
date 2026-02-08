@@ -196,18 +196,20 @@ void UCombatComponent::ResetSemiCounter() {
 		ServerResetSemiCounter();
 	}
 	else {
-		SemiShotCounter = 0;
-		OnRep_SemiShotCounter();
+		MulticastResetSemiCounter();
 	}
 }
 
 void UCombatComponent::ServerResetSemiCounter_Implementation() {
-	SemiShotCounter = 0;
-	OnRep_SemiShotCounter();
+	MulticastResetSemiCounter();
 }
 
 bool UCombatComponent::ServerResetSemiCounter_Validate() {
 	return true;
+}
+
+void UCombatComponent::MulticastResetSemiCounter_Implementation() {
+	SemiShotCounter = 0;
 }
 
 void UCombatComponent::OnRep_SpawnedWeapon() {

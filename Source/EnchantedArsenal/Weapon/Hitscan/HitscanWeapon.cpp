@@ -119,6 +119,9 @@ void AHitscanWeapon::ServerProcessShot(bool bHitSomething, const FVector& Impact
 
 
 void AHitscanWeapon::MulticastImpactEffects_Implementation(FVector_NetQuantize ImpactPoint) {
+    AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
+    if (InstigatorPawn->IsLocallyControlled()) return;
+
     if (ImpactParticles) {
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, ImpactPoint);
     }

@@ -51,6 +51,9 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerResetSemiCounter();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastResetSemiCounter();
+
 	AArsenalCharacter* Character;
 	AArsenalPlayerController* PlayerController;
 	AArsenalHUD* HUD;
