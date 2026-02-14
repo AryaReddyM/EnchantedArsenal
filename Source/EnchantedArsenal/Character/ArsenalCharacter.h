@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 #include "ArsenalCharacter.generated.h"
 
+////////////////////////////////////// Forward Declarations //////////////////////////////////////
+
 class UBoxComponent;
 class UCombatComponent;
 class UHealthComponent;
@@ -21,21 +23,29 @@ class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter {
 	GENERATED_BODY()
 
 public:
-	////////////////////////////////////// Initalize Functions //////////////////////////////////////
+	////////////////////////////////////// Function Declarations //////////////////////////////////////
+
+	// Constructor
 	AArsenalCharacter();
 	
+	// Replication Function
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	// Components Are Initialized and Ready to Use
 	virtual void PostInitializeComponents() override;
 	
 protected:
+	// When Game Starts
 	virtual void BeginPlay() override;
 
 public:	
+	// Every Game Tick
 	virtual void Tick(float DeltaTime) override;
 
+	// Player Input Function
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+	// Input Functions
 	void Move(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 
@@ -49,6 +59,7 @@ public:
 	void ShootStarted();
 	void ShootReleased();
 
+	// Utility Functions
 	UFUNCTION()
 	void HandleDeath();
 
@@ -58,81 +69,108 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bInAiming);
 
+	// Getters
 	AWeapon* GetWeapon();
 	bool IsWeaponEquipped();
 	bool IsAiming();
 	bool IsShooting();
 
-	////////////////////////////////////// Initalize Variables //////////////////////////////////////
+	////////////////////////////////////// Variable Declarations //////////////////////////////////////
+
+	//////////////// Components ////////////////
+
+	// Camera Boom
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* SpringArmComp;
 
+	// Camera
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* CameraComp;
 
+	// Collision
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
 
+	// Headshot Collision
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UBoxComponent* HeadshotBoxCollisionComp;
 
+	// Mesh
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* SkeletalMeshComp = FindComponentByClass<USkeletalMeshComponent>();
 
+	// Movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 
+	// Weapon Combat
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"), Replicated)
 	UCombatComponent* CombatComp;
-
+	
+	// Health
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"), Replicated)
 	UHealthComponent* HealthComp;
 
+	//////////////// Input ////////////////
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
-
+	
+	// Move (W, A, S, D)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 
+	// Look Around
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	// Jump
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 	
+	// Equip Rifle
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipRifleAction;
 
+	// Equip SMG
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipSMGAction;
 
+	// Equip Shotgun
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipShotgunAction;
 
+	// Equip Pistol
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipPistolAction;
 
+	// Aim
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
 
+	// Shoot
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ShootAction;
 
+	//////////////// Utilities ////////////////
+
+	// POV when Default
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float HipCameraBoomLength = 300.0f;
 
+	// POV when ADS
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float AimCameraBoomLength = 150.0f;
 
+	// Lerp time inbetween ADS and Default
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float ADSTime = 0.5f;
 
+	// Helps Calculate Speed for Animation
 	UPROPERTY(EditAnywhere, Category = Movement)
 	float IdleWalkRunInterpSpeed;
 
-	UPROPERTY(EditAnywhere, Category = Health)
-	float MaxHealth = 250;
-
+	// Recoil Variables
 	float CurrentRecoilPitch = 0.f;
 	float TargetRecoilPitch = 0.f;
 
@@ -142,6 +180,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float RecoilInterpSpeed = 12.f;
 
+	// Aim Variables
 	UPROPERTY(Replicated)
 	bool bAiming;
 	UPROPERTY(EditAnywhere)

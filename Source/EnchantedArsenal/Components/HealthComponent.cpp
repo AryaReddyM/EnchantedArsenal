@@ -1,7 +1,10 @@
 #include "HealthComponent.h"
 
 UHealthComponent::UHealthComponent() {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
+
+	MaxHealth = MaxHealth;
+	CurrentHealth = MaxHealth;
 }
 
 

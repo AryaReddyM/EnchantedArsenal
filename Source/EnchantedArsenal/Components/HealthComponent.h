@@ -22,7 +22,8 @@ public:
 	void ApplyDamage(float Damage);
 	void Die();
 
-	float MaxHealth;
+	UPROPERTY(EditAnywhere)
+	float MaxHealth = 250.0f;
 	float CurrentHealth;
 
 	FOnDeath OnDeath;

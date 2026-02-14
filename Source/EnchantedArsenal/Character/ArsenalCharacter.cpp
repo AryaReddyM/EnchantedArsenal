@@ -9,8 +9,6 @@
 #include "Components/InputComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Components/HealthComponent.h"
-#include "ArsenalAnimInstance.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
 #include "Components/BoxComponent.h"
@@ -51,11 +49,6 @@ void AArsenalCharacter::PostInitializeComponents() {
 
 	if (CombatComp) {
 		CombatComp->Character = this;
-	}
-
-	if (HealthComp) {
-		HealthComp->MaxHealth = MaxHealth;
-		HealthComp->CurrentHealth = MaxHealth;
 	}
 }
 
