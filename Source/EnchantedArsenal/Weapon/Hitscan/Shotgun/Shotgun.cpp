@@ -19,12 +19,11 @@ void AShotgun::Shoot() {
 
     HitLocations.Reset();
 
-    if (InstigatorPawn->IsLocallyControlled()) {
-        InstigatorPawn->PlayShootMontage();
+    if (InstigatorPawn->IsLocallyControlled() && InstigatorPawn->CombatComp) {
+        InstigatorPawn->CombatComp->PlayShootMontage();
     }
 
-    FHitResult CrosshairHitResult;
-    InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
+    FHitResult CrosshairHitResult = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
 
     FVector CameraLoc = InstigatorPawn->CameraComp->GetComponentLocation();
     FVector CrosshairImpactPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;

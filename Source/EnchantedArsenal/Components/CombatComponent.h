@@ -30,10 +30,6 @@ public:
 
 	void EquipWeapon(EWeaponType WeaponType);
 	void DestroyWeapon();
-
-	void SetAiming(bool bInAiming);
-	UFUNCTION(Server, Reliable)
-	void ServerSetAiming(bool bInAiming);
 	
 	void Shoot(bool bTriggered);
 	UFUNCTION(Server, Reliable)
@@ -41,7 +37,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiShoot(bool bTriggered);
 
-	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
+	FHitResult TraceUnderCrosshairs();
 
 	void SetSemiCounter(int Counter);
 	UFUNCTION(Server, Reliable)
@@ -54,13 +50,15 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastResetSemiCounter();
 
+	void PlayShootMontage();
+	void PlayEquipMontage();
+
 	AArsenalCharacter* Character;
 	AArsenalPlayerController* PlayerController;
 	AArsenalHUD* HUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SpawnedWeapon)
 	AWeapon* SpawnedWeapon;
-
 	UFUNCTION()
 	void OnRep_SpawnedWeapon();
 
@@ -77,14 +75,7 @@ public:
 	TSubclassOf<AWeapon> SMG;
 
 	UPROPERTY(Replicated)
-	bool bAiming;
-	UPROPERTY(Replicated)
 	bool bShooting;
-
-	UPROPERTY(EditAnywhere)
-	float BaseWalkSpeed = 600.0f;
-	UPROPERTY(EditAnywhere)
-	float AimWalkSpeed = 450.0f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SemiShotCounter)
 	int SemiShotCounter = 0;

@@ -39,21 +39,9 @@ public:
 	void Move(const struct FInputActionValue& Value);
 	void Look(const struct FInputActionValue& Value);
 
-	void EquipRifle();
+	void EquipWeapon(EWeaponType WeaponType);
 	UFUNCTION(Server, Reliable)
-	void ServerEquipRifle();
-
-	void EquipShotgun();
-	UFUNCTION(Server, Reliable)
-	void ServerEquipShotgun();
-
-	void EquipSMG();
-	UFUNCTION(Server, Reliable)
-	void ServerEquipSMG();
-
-	void EquipPistol();
-	UFUNCTION(Server, Reliable)
-	void ServerEquipPistol();
+	void ServerEquipWeapon(EWeaponType WeaponType);
 
 	void Aim();
 	void AimReleased();
@@ -61,20 +49,19 @@ public:
 	void ShootStarted();
 	void ShootReleased();
 
-	bool IsWeaponEquipped();
-
-	bool IsAiming();
-	bool IsShooting();
-
-	AWeapon* GetWeapon();
-
-	void PlayShootMontage();
-	void PlayEquipMontage();
-
 	UFUNCTION()
 	void HandleDeath();
 
 	void AddRecoil(float Min, float Max);
+
+	void SetAiming(bool bInAiming);
+	UFUNCTION(Server, Reliable)
+	void ServerSetAiming(bool bInAiming);
+
+	AWeapon* GetWeapon();
+	bool IsWeaponEquipped();
+	bool IsAiming();
+	bool IsShooting();
 
 	////////////////////////////////////// Initalize Variables //////////////////////////////////////
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -154,4 +141,11 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float RecoilInterpSpeed = 12.f;
+
+	UPROPERTY(Replicated)
+	bool bAiming;
+	UPROPERTY(EditAnywhere)
+	float BaseWalkSpeed = 600.0f;
+	UPROPERTY(EditAnywhere)
+	float AimWalkSpeed = 450.0f;
 };

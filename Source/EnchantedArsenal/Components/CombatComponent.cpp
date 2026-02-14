@@ -1,14 +1,10 @@
 #include "CombatComponent.h"
 
 #include "EnchantedArsenal/Character/ArsenalCharacter.h"
-#include "Engine/SkeletalMeshSocket.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
-#include "DrawDebugHelpers.h"
-#include "EnchantedArsenal/PlayerController/ArsenalPlayerController.h"
-#include "EnchantedArsenal/HUD/ArsenalHUD.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UCombatComponent::UCombatComponent() {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -18,17 +14,12 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCombatComponent, SpawnedWeapon);
-	DOREPLIFETIME(UCombatComponent, bAiming);
 	DOREPLIFETIME(UCombatComponent, bShooting);
 	DOREPLIFETIME(UCombatComponent, SemiShotCounter);
 }
 
 void UCombatComponent::BeginPlay() {
 	Super::BeginPlay();
-
-	if (Character) {
-		Character->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
-	}
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
@@ -74,28 +65,11 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 
 	SpawnedWeapon = NewWeapon;
 
-	Character->PlayEquipMontage();
+	PlayEquipMontage();
 }
 
 void UCombatComponent::DestroyWeapon() {
 	if (SpawnedWeapon) SpawnedWeapon->Destroy();
-}
-
-void UCombatComponent::SetAiming(bool bInAiming) {
-	bAiming = bInAiming;
-	ServerSetAiming(bInAiming);
-
-	if (Character) {
-		Character->GetCharacterMovement()->MaxWalkSpeed = bAiming ? AimWalkSpeed : BaseWalkSpeed;
-	}
-}
-
-void UCombatComponent::ServerSetAiming_Implementation(bool bInAiming) {
-	bAiming = bInAiming;
-
-	if (Character) {
-		Character->GetCharacterMovement()->MaxWalkSpeed = bAiming ? AimWalkSpeed : BaseWalkSpeed;
-	}
 }
 
 void UCombatComponent::Shoot(bool bTriggered) {
@@ -105,7 +79,7 @@ void UCombatComponent::Shoot(bool bTriggered) {
 	ServerShoot(bTriggered);
 
 	if (Character && SpawnedWeapon->FireType != EFireType::EFT_SemiAuto) {
-		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? AimWalkSpeed : BaseWalkSpeed;
+		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? Character->AimWalkSpeed : Character->BaseWalkSpeed;
 	}
 }
 
@@ -114,7 +88,7 @@ void UCombatComponent::ServerShoot_Implementation(bool bTriggered) {
 
 	bShooting = bTriggered;
 	if (Character && SpawnedWeapon->FireType != EFireType::EFT_SemiAuto) {
-		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? AimWalkSpeed : BaseWalkSpeed;
+		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? Character->AimWalkSpeed : Character->BaseWalkSpeed;
 	}
 }
 
@@ -133,32 +107,32 @@ void UCombatComponent::MultiShoot_Implementation(bool bTriggered) {
 	}
 
 	if (SpawnedWeapon->FireType == EFireType::EFT_Auto) {
-		Character->PlayShootMontage();
+		PlayShootMontage();
 	}
 
 	SpawnedWeapon->Shoot();
 }
 
-void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
-	TraceHitResult = FHitResult();
+FHitResult UCombatComponent::TraceUnderCrosshairs() {
+	FHitResult TraceHitResult;
 
-	if (!Character) return;
+	if (!Character) return FHitResult();
 
-	if (!Character->IsLocallyControlled()) return;
+	if (!Character->IsLocallyControlled()) return FHitResult();
 
 	APlayerController* PC = Cast<APlayerController>(Character->GetController());
-	if (!PC) return;
+	if (!PC) return FHitResult();
 
 	int32 SizeX = 0, SizeY = 0;
 	PC->GetViewportSize(SizeX, SizeY);
-	if (SizeX <= 0 || SizeY <= 0) return;
+	if (SizeX <= 0 || SizeY <= 0) return FHitResult();
 
 	const FVector2D CrosshairLocation(SizeX * 0.5f, SizeY * 0.5f);
 
 	FVector CrosshairWorldPos;
 	FVector CrosshairWorldDir;
 	if (!UGameplayStatics::DeprojectScreenToWorld(PC, CrosshairLocation, CrosshairWorldPos, CrosshairWorldDir))
-		return;
+		return FHitResult();
 
 	const FVector Start = CrosshairWorldPos;
 	const FVector End = Start + CrosshairWorldDir * TRACE_LENGTH;
@@ -172,6 +146,8 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult) {
 	if (!TraceHitResult.bBlockingHit) {
 		TraceHitResult.ImpactPoint = End;
 	}
+
+	return TraceHitResult;
 }
 
 void UCombatComponent::SetSemiCounter(int Counter) {
@@ -200,6 +176,33 @@ void UCombatComponent::ResetSemiCounter() {
 	}
 }
 
+void UCombatComponent::PlayShootMontage() {
+	if (!Character || !SpawnedWeapon) return;
+
+	UAnimInstance* AnimInstance = Character->GetMesh() ? Character->GetMesh()->GetAnimInstance() : nullptr;
+	if (!AnimInstance) return;
+
+	if (SpawnedWeapon->FireType == EFireType::EFT_SemiAuto) {
+		AnimInstance->Montage_Play(SpawnedWeapon->ShootMontage);
+		return;
+	}
+
+	if (!AnimInstance->Montage_IsPlaying(SpawnedWeapon->ShootMontage)) {
+		AnimInstance->Montage_Play(SpawnedWeapon->ShootMontage);
+	}
+}
+
+void UCombatComponent::PlayEquipMontage() {
+	if (!Character || !SpawnedWeapon) return;
+
+	UAnimInstance* AnimInstance = Character->GetMesh() ? Character->GetMesh()->GetAnimInstance() : nullptr;
+	if (!AnimInstance) return;
+
+	if (!AnimInstance->Montage_IsPlaying(SpawnedWeapon->EquipMontage)) {
+		AnimInstance->Montage_Play(SpawnedWeapon->EquipMontage);
+	}
+}
+
 void UCombatComponent::ServerResetSemiCounter_Implementation() {
 	MulticastResetSemiCounter();
 }
@@ -224,7 +227,7 @@ void UCombatComponent::OnRep_SpawnedWeapon() {
 	const FTransform GripRelativeTransform = SpawnedWeapon->GripPoint->GetRelativeTransform();
 	SpawnedWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
 
-	Character->PlayEquipMontage();
+	PlayEquipMontage();
 }
 
 void UCombatComponent::OnRep_SemiShotCounter() {

@@ -25,6 +25,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayShootAnimation();
 
+	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult);
+
 protected:
 	FTimerHandle ShootTimerHandle;
 };

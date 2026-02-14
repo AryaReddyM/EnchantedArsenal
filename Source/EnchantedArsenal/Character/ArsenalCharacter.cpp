@@ -14,6 +14,7 @@
 #include "EnchantedArsenal/Weapon/Weapon.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -42,6 +43,7 @@ void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 	DOREPLIFETIME(AArsenalCharacter, CombatComp);
 	DOREPLIFETIME(AArsenalCharacter, HealthComp);
+	DOREPLIFETIME(AArsenalCharacter, bAiming)
 }
 
 void AArsenalCharacter::PostInitializeComponents() {
@@ -65,6 +67,8 @@ void AArsenalCharacter::BeginPlay() {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	MoveComp->MaxWalkSpeed = BaseWalkSpeed;
 
 	HealthComp->OnDeath.AddDynamic(this, &AArsenalCharacter::HandleDeath);
 }
@@ -106,10 +110,10 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		
-		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipRifle);
-		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSMG);
-		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipShotgun);
-		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipPistol);
+		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Rifle);
+		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_SMG);
+		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Shotgun);
+		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
 
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
@@ -134,114 +138,40 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 	AddControllerPitchInput(LookAxisVector.Y * 0.4F);
 }
 
-void AArsenalCharacter::EquipRifle() {
+void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
 	if (CombatComp) {
 		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
+			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
 
 			CombatComp->bIsRecentlyEquipped = true;
 
-			CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
+			CombatComp->EquipWeapon(WeaponType);
 		}
 		else {
-			ServerEquipRifle();
+			ServerEquipWeapon(WeaponType);
 		}
 	}
 }
 
-void AArsenalCharacter::ServerEquipRifle_Implementation() {
+void AArsenalCharacter::ServerEquipWeapon_Implementation(EWeaponType WeaponType) {
 	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;
+		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
 
 		CombatComp->bIsRecentlyEquipped = true;
 
-		CombatComp->EquipWeapon(EWeaponType::EWT_Rifle);
+		CombatComp->EquipWeapon(WeaponType);
 	}
 }
-
-void AArsenalCharacter::EquipSMG() {
-	if (CombatComp) {
-		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
-
-			CombatComp->bIsRecentlyEquipped = true;
-
-			CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
-		}
-		else {
-			ServerEquipSMG();
-		}
-	}
-}
-void AArsenalCharacter::ServerEquipSMG_Implementation() {
-	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_SMG) return;
-
-		CombatComp->bIsRecentlyEquipped = true;
-
-		CombatComp->EquipWeapon(EWeaponType::EWT_SMG);
-	}
-}
-
-void AArsenalCharacter::EquipShotgun() {
-	if (CombatComp) {
-		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
-
-			CombatComp->bIsRecentlyEquipped = true;
-
-			CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
-		}
-		else {
-			ServerEquipShotgun();
-		}
-	}
-}
-void AArsenalCharacter::ServerEquipShotgun_Implementation() {
-	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Shotgun) return;
-
-		CombatComp->bIsRecentlyEquipped = true;
-
-		CombatComp->EquipWeapon(EWeaponType::EWT_Shotgun);
-	}
-}
-
-
-void AArsenalCharacter::EquipPistol() {
-	if (CombatComp) {
-		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
-
-			CombatComp->bIsRecentlyEquipped = true;
-
-			CombatComp->EquipWeapon(EWeaponType::EWT_Pistol);
-		}
-		else {
-			ServerEquipPistol();
-		}
-	}
-}
-void AArsenalCharacter::ServerEquipPistol_Implementation() {
-	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Pistol) return;
-
-		CombatComp->bIsRecentlyEquipped = true;
- 
-		CombatComp->EquipWeapon(EWeaponType::EWT_Pistol);
-	}
-}
-
 
 void AArsenalCharacter::Aim() {
-	if (CombatComp && CombatComp->SpawnedWeapon) {
-		CombatComp->SetAiming(true);
+	if (CombatComp->SpawnedWeapon) {
+		SetAiming(true);
 	}
 }
 
 void AArsenalCharacter::AimReleased() {
-	if (CombatComp && CombatComp->SpawnedWeapon) {
-		CombatComp->SetAiming(false);
+	if (CombatComp->SpawnedWeapon) {
+		SetAiming(false);
 	}
 }
 
@@ -263,51 +193,6 @@ void AArsenalCharacter::ShootReleased() {
 	}
 }
 
-bool AArsenalCharacter::IsWeaponEquipped() {
-	return (CombatComp && CombatComp->SpawnedWeapon);
-}
-
-bool AArsenalCharacter::IsAiming() {
-	return (CombatComp && CombatComp->bAiming);
-}
-
-bool AArsenalCharacter::IsShooting() {
-	return (CombatComp && CombatComp->bShooting);
-}
-
-AWeapon* AArsenalCharacter::GetWeapon() {
-	if (CombatComp == nullptr) return nullptr;
-
-	return CombatComp->SpawnedWeapon;
-}
-
-void AArsenalCharacter::PlayShootMontage() {
-	if (!CombatComp || !CombatComp->SpawnedWeapon) return;
-
-	UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-	if (!AnimInstance) return;
-
-	if (CombatComp->SpawnedWeapon->FireType == EFireType::EFT_SemiAuto) {
-		AnimInstance->Montage_Play(CombatComp->SpawnedWeapon->ShootMontage);
-		return;
-	}
-
-	if (!AnimInstance->Montage_IsPlaying(CombatComp->SpawnedWeapon->ShootMontage)) {
-		AnimInstance->Montage_Play(CombatComp->SpawnedWeapon->ShootMontage);
-	}
-}
-
-void AArsenalCharacter::PlayEquipMontage() {
-	if (!CombatComp || !CombatComp->SpawnedWeapon) return;
-
-	UAnimInstance* AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-	if (!AnimInstance) return;
-
-	if (!AnimInstance->Montage_IsPlaying(CombatComp->SpawnedWeapon->EquipMontage)) {
-		AnimInstance->Montage_Play(CombatComp->SpawnedWeapon->EquipMontage);
-	}
-}
-
 void AArsenalCharacter::HandleDeath() {
 	Destroy();
 	CombatComp->DestroyWeapon();
@@ -316,4 +201,35 @@ void AArsenalCharacter::HandleDeath() {
 void AArsenalCharacter::AddRecoil(float Min, float Max) {
 	TargetRecoilPitch += FMath::RandRange(Min, Max);
 	TargetRecoilYaw += FMath::RandRange(Min, Max);
+}
+
+void AArsenalCharacter::SetAiming(bool bInAiming) {
+	bAiming = bInAiming;
+	ServerSetAiming(bInAiming);
+
+	MoveComp->MaxWalkSpeed = bAiming ? AimWalkSpeed : BaseWalkSpeed;
+}
+
+void AArsenalCharacter::ServerSetAiming_Implementation(bool bInAiming) {
+	bAiming = bInAiming;
+
+	MoveComp->MaxWalkSpeed = bAiming ? AimWalkSpeed : BaseWalkSpeed;
+}
+
+AWeapon* AArsenalCharacter::GetWeapon() {
+	if (CombatComp == nullptr) return nullptr;
+
+	return CombatComp->SpawnedWeapon;
+}
+
+bool AArsenalCharacter::IsWeaponEquipped() {
+	return (CombatComp && CombatComp->SpawnedWeapon);
+}
+
+bool AArsenalCharacter::IsAiming() {
+	return bAiming;
+}
+
+bool AArsenalCharacter::IsShooting() {
+	return (CombatComp && CombatComp->bShooting);
 }

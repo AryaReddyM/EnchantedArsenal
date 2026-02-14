@@ -25,10 +25,9 @@ void AHitscanWeapon::Shoot() {
     LastFireTime = CurrentTime;
 
     if (InstigatorPawn->IsLocallyControlled()) {
-        InstigatorPawn->PlayShootMontage();
+        InstigatorPawn->CombatComp->PlayShootMontage();
 
-        FHitResult CrosshairHit;
-        InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHit);
+        FHitResult CrosshairHit = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
 
         const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
         if (!MuzzleSocket) return;
@@ -39,8 +38,7 @@ void AHitscanWeapon::Shoot() {
 
     bool bHitSomething = false;
     FVector ImpactPoint = FVector::ZeroVector;
-    FHitResult CrosshairHit;
-    InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHit);
+    FHitResult CrosshairHit = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
     bHitSomething = CrosshairHit.bBlockingHit;
     ImpactPoint = bHitSomething ? CrosshairHit.ImpactPoint : CrosshairHit.TraceEnd;
 
@@ -119,18 +117,21 @@ void AHitscanWeapon::ServerProcessShot(bool bHitSomething, const FVector& Impact
 
 
 void AHitscanWeapon::MulticastImpactEffects_Implementation(FVector_NetQuantize ImpactPoint) {
-    if (ImpactParticles) {
-        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, ImpactPoint);
-    }
+    AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
+    if (InstigatorPawn && !InstigatorPawn->IsLocallyControlled()) {
+        if (ImpactParticles) {
+            UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, ImpactPoint);
+        }
 
-    if (ImpactSound) {
-        UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, ImpactPoint);
-    }
+        if (ImpactSound) {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, ImpactPoint);
+        }
 
-    const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-    if (MuzzleSocket && MuzzleFlashParticles) {
-        FVector MuzzleLoc = MuzzleSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
-        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashParticles, MuzzleLoc);
+        const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
+        if (MuzzleSocket && MuzzleFlashParticles) {
+            FVector MuzzleLoc = MuzzleSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
+            UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashParticles, MuzzleLoc);
+        }
     }
 }
 
@@ -151,6 +152,25 @@ bool AHitscanWeapon::CheckForHeadshot(AActor* HitActor, FVector ImpactPoint) {
 void AHitscanWeapon::MulticastPlayShootAnimation_Implementation() {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
     if (InstigatorPawn && !InstigatorPawn->IsLocallyControlled()) {
-        InstigatorPawn->PlayShootMontage();
+        InstigatorPawn->CombatComp->PlayShootMontage();
+    }
+}
+
+void AHitscanWeapon::LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult) {
+    DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Yellow, false, 0.1f);
+    DrawDebugSphere(GetWorld(), TraceEnd, 8.0f, 12, FColor::Yellow, false, 0.1f);
+
+    if (CrosshairHitResult.bBlockingHit) {
+        if (ImpactParticles) {
+            UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, CrosshairHitResult.ImpactPoint);
+        }
+
+        if (ImpactSound) {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, CrosshairHitResult.ImpactPoint);
+        }
+
+        if (MuzzleFlashParticles) {
+            UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashParticles, MuzzleLocation);
+        }
     }
 }

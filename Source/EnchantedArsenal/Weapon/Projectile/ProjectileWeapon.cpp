@@ -31,8 +31,7 @@ void AProjectileWeapon::Shoot() {
             SpawnParams.Owner = GetOwner();
             SpawnParams.Instigator = InstigatorPawn;
 
-            FHitResult CrosshairHitResult;
-            InstigatorPawn->CombatComp->TraceUnderCrosshairs(CrosshairHitResult);
+            FHitResult CrosshairHitResult = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
 
             FVector ToTarget = (CrosshairHitResult.ImpactPoint - SocketTransform.GetLocation());
             FRotator TargetRotation = ToTarget.Rotation();
