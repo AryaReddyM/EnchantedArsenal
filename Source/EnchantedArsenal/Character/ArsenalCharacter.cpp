@@ -148,6 +148,7 @@ void AArsenalCharacter::EquipRifle() {
 		}
 	}
 }
+
 void AArsenalCharacter::ServerEquipRifle_Implementation() {
 	if (CombatComp) {
 		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == EWeaponType::EWT_Rifle) return;

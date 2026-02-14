@@ -19,7 +19,6 @@ public:
 	void MulticastImpactEffects(FVector_NetQuantize ImpactPoint);
 
 	void ServerProcessShot(bool bHitSomething, const FVector& ImpactPoint);
-	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult);
 
 	bool CheckForHeadshot(AActor* HitActor, FVector ImpactPoint);
 
