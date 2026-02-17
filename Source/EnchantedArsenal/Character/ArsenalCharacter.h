@@ -4,11 +4,21 @@
 #include "GameFramework/Character.h"
 #include "ArsenalCharacter.generated.h"
 
+UENUM(BlueprintType)
+enum class EAttackType : uint8 {
+	EAT_Initial UMETA(DisplayName = "Initial Type"),
+	EAT_Weapon UMETA(DisplayName = "Weapon"),
+	EAT_Magic UMETA(DisplayName = "Magic"),
+
+	EAT_MAX UMETA(DisplayName = "DefaultMax")
+};
+
 ////////////////////////////////////// Forward Declarations //////////////////////////////////////
 
 class UBoxComponent;
 class UCombatComponent;
 class UHealthComponent;
+class UMagicComponent;
 class UInputAction;
 class UInputMappingContext;
 class UAnimMontage;
@@ -16,7 +26,9 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputComponent;
 class AWeapon;
+class ASpell;
 enum class EWeaponType : uint8;
+enum class ESpellType : uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter {
@@ -52,6 +64,10 @@ public:
 	void EquipWeapon(EWeaponType WeaponType);
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(EWeaponType WeaponType);
+
+	void EquipSpell(ESpellType SpellType);
+	UFUNCTION(Server, Reliable)
+	void ServerEquipSpell(ESpellType SpellType);
 
 	void Aim();
 	void AimReleased();
@@ -111,6 +127,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"), Replicated)
 	UHealthComponent* HealthComp;
 
+	// Magic
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"), Replicated)
+	UMagicComponent* MagicComp;
+
 	//////////////// Input ////////////////
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -127,6 +147,8 @@ public:
 	// Jump
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
+
+	////// Weapons //////
 	
 	// Equip Rifle
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -143,6 +165,16 @@ public:
 	// Equip Pistol
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipPistolAction;
+
+	////// Spells //////
+
+	// Equip Boulder
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* EquipBoulderAction;
+
+	// Equip Spiker Adder
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* EquipSpikerAdderAction;
 
 	// Aim
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -187,4 +219,10 @@ public:
 	float BaseWalkSpeed = 600.0f;
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed = 450.0f;
+
+	// Attack Type
+	UPROPERTY(ReplicatedUsing=OnRep_AttackType)
+	EAttackType AttackType;
+	UFUNCTION()
+	void OnRep_AttackType();
 };

@@ -29,7 +29,7 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	EquippedWeapon = ArsenalCharacter->GetWeapon();
 
 	bAiming = ArsenalCharacter->IsAiming();
-	bShooting = ArsenalCharacter->IsShooting() && EquippedWeapon->FireType != EFireType::EFT_SemiAuto;
+	bShooting = ArsenalCharacter->IsShooting() && EquippedWeapon && EquippedWeapon->FireType != EFireType::EFT_SemiAuto;
 
 	FVector Velocity = ArsenalCharacter->GetVelocity();
 	float LastSpeed = Speed;
@@ -90,7 +90,7 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 		TimeMoving = 0.f;
 	}
 
-	const bool bBlockedByCombat = (bShooting || bAiming);
+	const bool bBlockedByCombat = (ArsenalCharacter->IsShooting() || bAiming);
 
 	if (bBlockedByCombat) {
 		bMovementHold = false;

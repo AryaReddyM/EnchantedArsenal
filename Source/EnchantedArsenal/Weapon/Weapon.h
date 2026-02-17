@@ -75,16 +75,6 @@ public:
 
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh;  }
 
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsCenter;
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsRight;
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsLeft;
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsUp;
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsDown;
 	UPROPERTY(EditAnywhere)
 	float ShootRate;
 

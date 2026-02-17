@@ -10,9 +10,11 @@
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Components/HealthComponent.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
+#include "EnchantedArsenal/Magic/Spell.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "EnchantedArsenal/Components/MagicComponent.h"
 
 AArsenalCharacter::AArsenalCharacter() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -32,6 +34,9 @@ AArsenalCharacter::AArsenalCharacter() {
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("Health Component"));
 	HealthComp->SetIsReplicated(true);
 
+	MagicComp = CreateDefaultSubobject<UMagicComponent>(TEXT("Magic Component"));
+	MagicComp->SetIsReplicated(true);
+
 	HeadshotBoxCollisionComp = CreateDefaultSubobject<UBoxComponent>(TEXT("Headshot Box Collision Component"));
 	HeadshotBoxCollisionComp->SetupAttachment(CapsuleComp);
 }
@@ -41,7 +46,8 @@ void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 	DOREPLIFETIME(AArsenalCharacter, CombatComp);
 	DOREPLIFETIME(AArsenalCharacter, HealthComp);
-	DOREPLIFETIME(AArsenalCharacter, bAiming)
+	DOREPLIFETIME(AArsenalCharacter, bAiming);
+	DOREPLIFETIME(AArsenalCharacter, AttackType);
 }
 
 void AArsenalCharacter::PostInitializeComponents() {
@@ -49,6 +55,10 @@ void AArsenalCharacter::PostInitializeComponents() {
 
 	if (CombatComp) {
 		CombatComp->Character = this;
+	}
+
+	if (MagicComp) {
+		MagicComp->Character = this;
 	}
 }
 
@@ -108,6 +118,9 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Shotgun);
 		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
 
+		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
+		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
+
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
 
@@ -132,28 +145,54 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 }
 
 void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
-	if (CombatComp) {
-		if (HasAuthority()) {
-			if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
+	if (!CombatComp) return;
 
-			CombatComp->bIsRecentlyEquipped = true;
+	AttackType = EAttackType::EAT_Weapon;
 
-			CombatComp->EquipWeapon(WeaponType);
-		}
-		else {
-			ServerEquipWeapon(WeaponType);
-		}
+	if (HasAuthority()) {
+		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
+		CombatComp->bIsRecentlyEquipped = true;
+		CombatComp->EquipWeapon(WeaponType);
+	}
+	else {
+		ServerEquipWeapon(WeaponType);
 	}
 }
 
 void AArsenalCharacter::ServerEquipWeapon_Implementation(EWeaponType WeaponType) {
-	if (CombatComp) {
-		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
+	if (!CombatComp) return;
 
-		CombatComp->bIsRecentlyEquipped = true;
+	if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
 
-		CombatComp->EquipWeapon(WeaponType);
+	AttackType = EAttackType::EAT_Weapon;
+
+	CombatComp->bIsRecentlyEquipped = true;
+
+	CombatComp->EquipWeapon(WeaponType);
+}
+
+void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
+	if (!MagicComp) return;
+
+	AttackType = EAttackType::EAT_Magic;
+
+	if (HasAuthority()) {
+		if (MagicComp->SpawnedSpell && MagicComp->SpawnedSpell->SpellType == SpellType) return;
+		MagicComp->EquipSpell(SpellType);
 	}
+	else {
+		ServerEquipSpell(SpellType);
+	}
+}
+
+void AArsenalCharacter::ServerEquipSpell_Implementation(ESpellType SpellType) {
+	if (!MagicComp) return;
+
+	if (MagicComp->SpawnedSpell && MagicComp->SpawnedSpell->SpellType == SpellType) return;
+
+	AttackType = EAttackType::EAT_Magic;
+
+	MagicComp->EquipSpell(SpellType);
 }
 
 void AArsenalCharacter::Aim() {
@@ -169,20 +208,38 @@ void AArsenalCharacter::AimReleased() {
 }
 
 void AArsenalCharacter::Shoot() {
-	if (CombatComp) {
-		CombatComp->Shoot(true);
+	switch (AttackType) {
+	case EAttackType::EAT_Weapon:
+		if (CombatComp) {
+			CombatComp->Shoot(true);
+		}
+		break;
+	default:
+		break;
 	}
 }
 
 void AArsenalCharacter::ShootStarted() {
-	if (IsLocallyControlled() && CombatComp) {
-		CombatComp->ResetSemiCounter();
+	switch (AttackType) {
+	case EAttackType::EAT_Weapon:
+		if (IsLocallyControlled() && CombatComp) {
+			CombatComp->ResetSemiCounter();
+		}
+		break;
+	default:
+		break;
 	}
 }
 
 void AArsenalCharacter::ShootReleased() {
-	if (CombatComp) {
-		CombatComp->Shoot(false);
+	switch (AttackType) {
+	case EAttackType::EAT_Weapon:
+		if (CombatComp) {
+			CombatComp->Shoot(false);
+		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -225,4 +282,7 @@ bool AArsenalCharacter::IsAiming() {
 
 bool AArsenalCharacter::IsShooting() {
 	return (CombatComp && CombatComp->bShooting);
+}
+
+void AArsenalCharacter::OnRep_AttackType() {
 }

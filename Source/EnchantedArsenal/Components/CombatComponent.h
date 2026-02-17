@@ -16,12 +16,13 @@ UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENCHANTEDARSENAL_API UCombatComponent : public UActorComponent {
 	GENERATED_BODY()
 
+	friend AArsenalCharacter;
+
 public:
 	UCombatComponent();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	friend AArsenalCharacter;
 protected:
 	virtual void BeginPlay() override;
 
