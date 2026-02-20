@@ -7,6 +7,7 @@
 UENUM(BlueprintType)
 enum class EAttackType : uint8 {
 	EAT_Initial UMETA(DisplayName = "Initial Type"),
+	EAT_Unarmed UMETA(DisplayName = "Unarmed"),
 	EAT_Weapon UMETA(DisplayName = "Weapon"),
 	EAT_Magic UMETA(DisplayName = "Magic"),
 
@@ -84,6 +85,9 @@ public:
 	void SetAiming(bool bInAiming);
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bInAiming);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetAttackType(EAttackType NewType);
 
 	// Getters
 	AWeapon* GetWeapon();
@@ -221,8 +225,8 @@ public:
 	float AimWalkSpeed = 450.0f;
 
 	// Attack Type
-	UPROPERTY(ReplicatedUsing=OnRep_AttackType)
-	EAttackType AttackType;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, ReplicatedUsing = OnRep_AttackType)
+	EAttackType AttackType = EAttackType::EAT_Unarmed;
 	UFUNCTION()
 	void OnRep_AttackType();
 };

@@ -26,6 +26,8 @@ void UMagicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 void UMagicComponent::EquipSpell(ESpellType SpellType) {
 	if (!Character || !Character->HasAuthority()) return;
 
+	UnequipSpell();
+
 	if (SpawnedSpell) {
 		SpawnedSpell->Destroy();
 		SpawnedSpell = nullptr;
@@ -56,6 +58,15 @@ void UMagicComponent::EquipSpell(ESpellType SpellType) {
 	NewSpell->AttachToComponent(CharMesh, FAttachmentTransformRules::KeepRelativeTransform, HandSocket);
 
 	SpawnedSpell = NewSpell;
+}
+
+void UMagicComponent::UnequipSpell() {
+	if (!Character || !Character->HasAuthority()) return;
+
+	if (SpawnedSpell) {
+		SpawnedSpell->Destroy();
+		SpawnedSpell = nullptr;
+	}
 }
 
 void UMagicComponent::OnRep_SpawnedSpell() {

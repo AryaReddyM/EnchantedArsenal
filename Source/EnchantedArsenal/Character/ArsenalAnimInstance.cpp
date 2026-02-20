@@ -99,4 +99,6 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	else {
 		bMovementHold = (TimeMoving > 2.5f);
 	}
+
+	AttackType = ArsenalCharacter->AttackType;
 }

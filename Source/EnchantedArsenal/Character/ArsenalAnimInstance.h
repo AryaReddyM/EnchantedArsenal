@@ -7,8 +7,9 @@
 
 class AArsenalCharacter;
 class AWeapon;
-enum class EWeaponType :uint8;
+enum class EWeaponType : uint8;
 class UAnimMontage;
+enum class EAttackType : uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API UArsenalAnimInstance : public UAnimInstance {
@@ -74,4 +75,7 @@ private:
 	float TimeMoving;
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bMovementHold;
+
+	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+	EAttackType AttackType;
 };

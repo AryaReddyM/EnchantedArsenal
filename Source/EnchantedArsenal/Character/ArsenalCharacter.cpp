@@ -147,10 +147,8 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
 	if (!CombatComp) return;
 
-	AttackType = EAttackType::EAT_Weapon;
-
 	if (HasAuthority()) {
-		if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
+		ServerSetAttackType(EAttackType::EAT_Weapon);
 		CombatComp->bIsRecentlyEquipped = true;
 		CombatComp->EquipWeapon(WeaponType);
 	}
@@ -162,22 +160,19 @@ void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
 void AArsenalCharacter::ServerEquipWeapon_Implementation(EWeaponType WeaponType) {
 	if (!CombatComp) return;
 
+	ServerSetAttackType(EAttackType::EAT_Weapon);
+
 	if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
 
-	AttackType = EAttackType::EAT_Weapon;
-
 	CombatComp->bIsRecentlyEquipped = true;
-
 	CombatComp->EquipWeapon(WeaponType);
 }
 
 void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 	if (!MagicComp) return;
 
-	AttackType = EAttackType::EAT_Magic;
-
 	if (HasAuthority()) {
-		if (MagicComp->SpawnedSpell && MagicComp->SpawnedSpell->SpellType == SpellType) return;
+		ServerSetAttackType(EAttackType::EAT_Magic);
 		MagicComp->EquipSpell(SpellType);
 	}
 	else {
@@ -188,21 +183,27 @@ void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 void AArsenalCharacter::ServerEquipSpell_Implementation(ESpellType SpellType) {
 	if (!MagicComp) return;
 
-	if (MagicComp->SpawnedSpell && MagicComp->SpawnedSpell->SpellType == SpellType) return;
+	ServerSetAttackType(EAttackType::EAT_Magic);
 
-	AttackType = EAttackType::EAT_Magic;
+	if (MagicComp->SpawnedSpell && MagicComp->SpawnedSpell->SpellType == SpellType) return;
 
 	MagicComp->EquipSpell(SpellType);
 }
 
 void AArsenalCharacter::Aim() {
-	if (CombatComp->SpawnedWeapon) {
+	switch (AttackType) {
+	case EAttackType::EAT_Unarmed:
+		break;
+	default:
 		SetAiming(true);
 	}
 }
 
 void AArsenalCharacter::AimReleased() {
-	if (CombatComp->SpawnedWeapon) {
+	switch (AttackType) {
+	case EAttackType::EAT_Unarmed:
+		break;
+	default:
 		SetAiming(false);
 	}
 }
@@ -245,7 +246,18 @@ void AArsenalCharacter::ShootReleased() {
 
 void AArsenalCharacter::HandleDeath() {
 	Destroy();
-	CombatComp->DestroyWeapon();
+	
+	switch (AttackType) {
+	case EAttackType::EAT_Weapon:
+		if (MagicComp) MagicComp->UnequipSpell();
+		break;
+	case EAttackType::EAT_Magic:
+		if (CombatComp) CombatComp->UnequipWeapon();
+		break;
+	default:
+		if (CombatComp) CombatComp->UnequipWeapon();
+		if (MagicComp)  MagicComp->UnequipSpell();
+	}
 }
 
 void AArsenalCharacter::AddRecoil(float Min, float Max) {
@@ -264,6 +276,22 @@ void AArsenalCharacter::ServerSetAiming_Implementation(bool bInAiming) {
 	bAiming = bInAiming;
 
 	MoveComp->MaxWalkSpeed = bAiming ? AimWalkSpeed : BaseWalkSpeed;
+}
+
+void AArsenalCharacter::ServerSetAttackType_Implementation(EAttackType NewType) {
+	AttackType = NewType;
+
+	switch (AttackType) {
+	case EAttackType::EAT_Weapon:
+		if (MagicComp) MagicComp->UnequipSpell();
+		break;
+	case EAttackType::EAT_Magic:
+		if (CombatComp) CombatComp->UnequipWeapon();
+		break;
+	default:
+		if (CombatComp) CombatComp->UnequipWeapon();
+		if (MagicComp)  MagicComp->UnequipSpell();
+	}
 }
 
 AWeapon* AArsenalCharacter::GetWeapon() {

@@ -29,10 +29,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 	if (!Character || !Character->HasAuthority()) return;
 
-	if (SpawnedWeapon) {
-		SpawnedWeapon->Destroy();
-		SpawnedWeapon = nullptr;
-	}
+	UnequipWeapon();
 
 	TSubclassOf<AWeapon> WeaponClass = nullptr;
 	switch (WeaponType) {
@@ -68,8 +65,16 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 	PlayEquipMontage();
 }
 
-void UCombatComponent::DestroyWeapon() {
-	if (SpawnedWeapon) SpawnedWeapon->Destroy();
+void UCombatComponent::UnequipWeapon() {
+	if (!Character || !Character->HasAuthority()) return;
+
+	if (SpawnedWeapon) {
+		SpawnedWeapon->Destroy();
+		SpawnedWeapon = nullptr;
+	}
+
+	bShooting = false;
+	SemiShotCounter = 0;
 }
 
 void UCombatComponent::Shoot(bool bTriggered) {
@@ -216,16 +221,24 @@ void UCombatComponent::MulticastResetSemiCounter_Implementation() {
 }
 
 void UCombatComponent::OnRep_SpawnedWeapon() {
-	if (!Character || !SpawnedWeapon || !SpawnedWeapon->GripPoint) return;
+	if (!Character) return;
+
+	if (!SpawnedWeapon) {
+		bShooting = false;
+		SemiShotCounter = 0;
+		return;
+	}
 
 	USkeletalMeshComponent* CharMesh = Character->GetMesh();
 	if (!CharMesh) return;
 
 	const FName HandSocket(TEXT("RightHandSocket"));
-	SpawnedWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::KeepRelativeTransform, HandSocket);
+	SpawnedWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
 
-	const FTransform GripRelativeTransform = SpawnedWeapon->GripPoint->GetRelativeTransform();
-	SpawnedWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
+	if (SpawnedWeapon->GripPoint) {
+		const FTransform GripRel = SpawnedWeapon->GripPoint->GetRelativeTransform();
+		SpawnedWeapon->SetActorRelativeTransform(GripRel.Inverse());
+	}
 
 	PlayEquipMontage();
 }

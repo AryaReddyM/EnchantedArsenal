@@ -24,6 +24,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void EquipSpell(ESpellType SpellType);
+	void UnequipSpell();
 
 	AArsenalCharacter* Character;
 
