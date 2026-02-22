@@ -83,9 +83,9 @@ void UMagicComponent::ServerCast_Implementation(bool bTriggered) {
 }
 
 void UMagicComponent::MultiCast_Implementation(bool bTriggered) {
-	if (!SpawnedSpell || !Character) return;
-
-	if (!bTriggered) return;
+	CastState = ECastState::Casting;
+	
+	
 }
 
 void UMagicComponent::OnRep_SpawnedSpell() {
@@ -96,4 +96,7 @@ void UMagicComponent::OnRep_SpawnedSpell() {
 
 	const FName HandSocket(TEXT("RightHandSocket"));
 	SpawnedSpell->AttachToComponent(CharMesh, FAttachmentTransformRules::KeepRelativeTransform, HandSocket);
+}
+
+void UMagicComponent::OnRep_CastState() {
 }

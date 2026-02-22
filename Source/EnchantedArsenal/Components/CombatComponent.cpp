@@ -97,7 +97,6 @@ void UCombatComponent::MultiShoot_Implementation(bool bTriggered) {
 
 	if (bIsRecentlyEquipped) {
 		const float CurrentTime = GetWorld()->GetTimeSeconds();
-		float LastEquipTime = -1000.0f;
 
 		if (CurrentTime - LastEquipTime < 20.0f) return;
 

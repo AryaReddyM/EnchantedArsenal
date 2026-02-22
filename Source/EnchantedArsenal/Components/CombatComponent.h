@@ -85,4 +85,6 @@ public:
 	void OnRep_SemiShotCounter();
 
 	bool bIsRecentlyEquipped = false;
+	
+	float LastEquipTime = -1000.0f;
 };

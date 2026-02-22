@@ -10,9 +10,7 @@ enum class ESpellType : uint8;
 
 enum class ECastState : uint8 {
 	Idle UMETA(DisplayName = "Idle"),
-	Windup UMETA(DisplayName = "Windup"),
 	Casting UMETA(DisplayName = "Casting"),
-	Recovery UMETA(DisplayName = "Recovery"),
 	Cooldown UMETA(DisplayName = "Cooldown")
 };
 
@@ -55,4 +53,9 @@ public:
 
 	UPROPERTY(Replicated)
 	bool bCasting;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_CastState)
+	ECastState CastState = ECastState::Idle;
+	UFUNCTION()
+	void OnRep_CastState();
 };
