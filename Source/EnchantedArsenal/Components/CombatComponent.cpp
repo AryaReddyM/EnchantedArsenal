@@ -82,19 +82,12 @@ void UCombatComponent::Shoot(bool bTriggered) {
 
 	bShooting = bTriggered;
 	ServerShoot(bTriggered);
-
-	if (Character && SpawnedWeapon->FireType != EFireType::EFT_SemiAuto) {
-		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? Character->AimWalkSpeed : Character->BaseWalkSpeed;
-	}
 }
 
 void UCombatComponent::ServerShoot_Implementation(bool bTriggered) {
 	MultiShoot(bTriggered);
 
 	bShooting = bTriggered;
-	if (Character && SpawnedWeapon->FireType != EFireType::EFT_SemiAuto) {
-		Character->GetCharacterMovement()->MaxWalkSpeed = bShooting ? Character->AimWalkSpeed : Character->BaseWalkSpeed;
-	}
 }
 
 void UCombatComponent::MultiShoot_Implementation(bool bTriggered) {

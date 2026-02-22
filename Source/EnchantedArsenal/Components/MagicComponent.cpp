@@ -11,6 +11,7 @@ void UMagicComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UMagicComponent, SpawnedSpell);
+	DOREPLIFETIME(UMagicComponent, bCasting);
 }
 
 
@@ -67,6 +68,24 @@ void UMagicComponent::UnequipSpell() {
 		SpawnedSpell->Destroy();
 		SpawnedSpell = nullptr;
 	}
+}
+
+void UMagicComponent::Cast(bool bTriggered) {
+	if (!SpawnedSpell) return;
+
+	bCasting = bTriggered;
+	ServerCast(bTriggered);
+}
+
+void UMagicComponent::ServerCast_Implementation(bool bTriggered) {
+	bCasting = bTriggered;
+	MultiCast(bTriggered);
+}
+
+void UMagicComponent::MultiCast_Implementation(bool bTriggered) {
+	if (!SpawnedSpell || !Character) return;
+
+	if (!bTriggered) return;
 }
 
 void UMagicComponent::OnRep_SpawnedSpell() {

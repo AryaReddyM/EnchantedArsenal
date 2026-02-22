@@ -8,6 +8,14 @@ class AArsenalCharacter;
 class ASpell;
 enum class ESpellType : uint8;
 
+enum class ECastState : uint8 {
+	Idle UMETA(DisplayName = "Idle"),
+	Windup UMETA(DisplayName = "Windup"),
+	Casting UMETA(DisplayName = "Casting"),
+	Recovery UMETA(DisplayName = "Recovery"),
+	Cooldown UMETA(DisplayName = "Cooldown")
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENCHANTEDARSENAL_API UMagicComponent : public UActorComponent {
 	GENERATED_BODY()
@@ -26,6 +34,12 @@ public:
 	void EquipSpell(ESpellType SpellType);
 	void UnequipSpell();
 
+	void Cast(bool bTriggered);
+	UFUNCTION(Server, Reliable)
+	void ServerCast(bool bTriggered);
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCast(bool bTriggered);
+
 	AArsenalCharacter* Character;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SpawnedSpell)
@@ -33,10 +47,12 @@ public:
 	UFUNCTION()
 	void OnRep_SpawnedSpell();
 
-
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ASpell> Boulder;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ASpell> SpikeAdder;
+
+	UPROPERTY(Replicated)
+	bool bCasting;
 };

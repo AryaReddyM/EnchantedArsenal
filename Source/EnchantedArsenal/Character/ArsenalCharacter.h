@@ -198,7 +198,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float AimCameraBoomLength = 150.0f;
 
-	// Lerp time inbetween ADS and Default
+	// Lerp time in between ADS and Default
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float ADSTime = 0.5f;
 
