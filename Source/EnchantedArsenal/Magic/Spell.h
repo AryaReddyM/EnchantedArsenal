@@ -4,13 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "Spell.generated.h"
 
-UENUM(BlueprintType)
-enum class ESpellType : uint8 {
-	EST_Boulder UMETA(DisplayName = "Boulder"),
-	EST_SpikeAdder UMETA(DisplayName = "Spike Adder"),
-
-	EWT_MAX UMETA(DisplayName = "DefaultMax")
-};
+enum class ESpellType : uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API ASpell : public AActor

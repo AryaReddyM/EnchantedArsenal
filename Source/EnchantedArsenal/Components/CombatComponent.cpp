@@ -97,10 +97,11 @@ void UCombatComponent::MultiShoot_Implementation(bool bTriggered) {
 
 	if (bIsRecentlyEquipped) {
 		const float CurrentTime = GetWorld()->GetTimeSeconds();
+		const float EquipDelay = SpawnedWeapon ? SpawnedWeapon->EquipDelay : 0.f;
 
-		if (CurrentTime - LastEquipTime < 20.0f) return;
+		if (CurrentTime - LastEquipTime < EquipDelay) return;
 
-		LastEquipTime = CurrentTime;
+		bIsRecentlyEquipped = false;
 	}
 
 	if (SpawnedWeapon->FireType == EFireType::EFT_Auto) {

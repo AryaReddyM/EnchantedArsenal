@@ -11,11 +11,11 @@ void AShotgun::Shoot() {
 
     const float CurrentTime = GetWorld()->GetTimeSeconds();
 
-    if (CurrentTime - LastFireTime < ShootRate) return;
+    if (CurrentTime - LastShootTime < ShootRate) return;
 
     if (FireType == EFireType::EFT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
 
-    LastFireTime = CurrentTime;
+    LastShootTime = CurrentTime;
 
     HitLocations.Reset();
 

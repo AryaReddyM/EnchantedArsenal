@@ -18,16 +18,16 @@ void AHitscanWeapon::Shoot() {
 
     const float CurrentTime = GetWorld()->GetTimeSeconds();
 
-    if (CurrentTime - LastFireTime < ShootRate) return;
+    if (CurrentTime - LastShootTime < ShootRate) return;
 
     if (FireType == EFireType::EFT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
 
-    LastFireTime = CurrentTime;
+    LastShootTime = CurrentTime;
+    
+    FHitResult CrosshairHit = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
 
     if (InstigatorPawn->IsLocallyControlled()) {
         InstigatorPawn->CombatComp->PlayShootMontage();
-
-        FHitResult CrosshairHit = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
 
         const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
         if (!MuzzleSocket) return;
@@ -38,7 +38,6 @@ void AHitscanWeapon::Shoot() {
 
     bool bHitSomething = false;
     FVector ImpactPoint = FVector::ZeroVector;
-    FHitResult CrosshairHit = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
     bHitSomething = CrosshairHit.bBlockingHit;
     ImpactPoint = bHitSomething ? CrosshairHit.ImpactPoint : CrosshairHit.TraceEnd;
 

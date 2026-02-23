@@ -6,8 +6,9 @@
 
 class AArsenalCharacter;
 class ASpell;
-enum class ESpellType : uint8;
+class USpellData;
 
+UENUM(BlueprintType)
 enum class ECastState : uint8 {
 	Idle UMETA(DisplayName = "Idle"),
 	Casting UMETA(DisplayName = "Casting"),
@@ -29,7 +30,7 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void EquipSpell(ESpellType SpellType);
+	void EquipSpell(USpellData* SpellData);
 	void UnequipSpell();
 
 	void Cast(bool bTriggered);
@@ -44,12 +45,6 @@ public:
 	ASpell* SpawnedSpell;
 	UFUNCTION()
 	void OnRep_SpawnedSpell();
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<ASpell> Boulder;
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<ASpell> SpikeAdder;
 
 	UPROPERTY(Replicated)
 	bool bCasting;

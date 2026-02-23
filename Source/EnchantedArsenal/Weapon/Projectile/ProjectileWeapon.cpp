@@ -13,11 +13,11 @@ void AProjectileWeapon::Shoot() {
 
     const float CurrentTime = GetWorld()->GetTimeSeconds();
 
-    if (CurrentTime - LastFireTime < ShootRate) {
+    if (CurrentTime - LastShootTime < ShootRate) {
         return;
     }
 
-    LastFireTime = CurrentTime;
+    LastShootTime = CurrentTime;
 
 
     const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));

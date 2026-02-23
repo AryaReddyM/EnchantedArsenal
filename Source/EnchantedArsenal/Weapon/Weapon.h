@@ -100,7 +100,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	float RecoilMax;
 
-	float LastFireTime = -1000.f;
+	float LastShootTime = -1000.f;
 
 	UPROPERTY(EditAnywhere)
 	float EquipDelay = 2.0f;
