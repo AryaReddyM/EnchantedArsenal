@@ -28,6 +28,7 @@ class UCameraComponent;
 class UInputComponent;
 class AWeapon;
 class ASpell;
+class USpellData;
 enum class EWeaponType : uint8;
 enum class ESpellType : uint8;
 

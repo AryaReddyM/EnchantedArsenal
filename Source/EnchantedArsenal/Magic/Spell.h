@@ -5,6 +5,7 @@
 #include "Spell.generated.h"
 
 enum class ESpellType : uint8;
+class USpellData;
 
 UCLASS()
 class ENCHANTEDARSENAL_API ASpell : public AActor
@@ -21,15 +22,21 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
+	
+	void InitFromData();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
-	USceneComponent* BaseRoot;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
-	USkeletalMeshComponent* WeaponMesh;
+	UPROPERTY(VisibleAnywhere) 
+	USceneComponent* Root = nullptr;
+	
+	UPROPERTY(VisibleAnywhere) 
+	UStaticMeshComponent* MeshComp = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spell Properties", ReplicatedUsing = OnRep_SpellType)
 	ESpellType SpellType;
 	UFUNCTION()
 	void OnRep_SpellType();
+	
+	UPROPERTY(EditAnywhere)
+	USpellData* Data;
+	
 };

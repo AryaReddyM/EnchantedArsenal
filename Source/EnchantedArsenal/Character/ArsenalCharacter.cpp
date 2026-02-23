@@ -140,8 +140,8 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
 
 		// Spell equips
-		// EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
-		// EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
+		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
+		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
 
 		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
@@ -225,7 +225,7 @@ void AArsenalCharacter::ServerEquipSpell_Implementation(ESpellType SpellType) {
 	ServerSetAttackType(EAttackType::EAT_Magic);
 
 	// Already Equipped this Spell -> Return
-	if (MagicComp->SpawnedSpell && MagicComp->SpawnedSpell->SpellType == SpellType) return;
+	if (MagicComp->SpawnedVisual) return;
 
 	MagicComp->EquipSpell(SpellType);
 }
@@ -262,6 +262,11 @@ void AArsenalCharacter::Shoot() {
 			CombatComp->Shoot(true);
 		}
 		break;
+	case EAttackType::EAT_Magic:
+		if (MagicComp) {
+			MagicComp->Cast(true);
+		}
+		break;
 	default:
 		break;
 	}
@@ -286,6 +291,11 @@ void AArsenalCharacter::ShootReleased() {
 	case EAttackType::EAT_Weapon:
 		if (CombatComp) {
 			CombatComp->Shoot(false);
+		}
+		break;
+	case EAttackType::EAT_Magic:
+		if (MagicComp) {
+			MagicComp->Cast(false);
 		}
 		break;
 	default:

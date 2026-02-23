@@ -14,10 +14,13 @@ class ENCHANTEDARSENAL_API ASpellVisual : public AActor {
 public:	
 	ASpellVisual();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void InitFromData();
 
 	UPROPERTY(VisibleAnywhere) 
 	USceneComponent* Root = nullptr;
+	
 	UPROPERTY(VisibleAnywhere) 
 	UStaticMeshComponent* MeshComp = nullptr;
 

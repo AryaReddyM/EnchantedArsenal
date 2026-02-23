@@ -1,18 +1,19 @@
 #include "Spell.h"
 #include "Net/UnrealNetwork.h"
+#include "SpellData.h"
 
 ASpell::ASpell() {
 	PrimaryActorTick.bCanEverTick = true;
 	SetReplicates(true);
 
-	BaseRoot = CreateDefaultSubobject<USceneComponent>(TEXT("BaseRoot"));
-	SetRootComponent(BaseRoot);
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("BaseRoot"));
+	SetRootComponent(Root);
 
-	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
-	WeaponMesh->SetupAttachment(RootComponent);
-	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	MeshComp->SetupAttachment(RootComponent);
+	MeshComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	MeshComp->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ASpell::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
@@ -27,6 +28,18 @@ void ASpell::BeginPlay() {
 
 void ASpell::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
+}
+
+void ASpell::InitFromData() {
+	if (!Data) return;
+	
+	if (Data->Mesh) {
+		MeshComp->SetStaticMesh(Data->Mesh);
+	}
+	
+	if (Data->Material) {
+		MeshComp->SetMaterial(0, Data->Material);
+	}
 }
 
 void ASpell::OnRep_SpellType() {

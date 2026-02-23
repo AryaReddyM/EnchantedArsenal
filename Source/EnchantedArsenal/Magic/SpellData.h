@@ -6,27 +6,40 @@
 class UStaticMesh;
 class UNiagaraSystem;
 class UMaterialInterface;
-
-UENUM(BlueprintType)
-enum class ESpellType : uint8
-{
-	EST_Boulder,
-	EST_SpikeAdder,
-	EST_MAX
-};
+class ASpellVisual;
+class ASpell;
 
 UCLASS(BlueprintType)
 class ENCHANTEDARSENAL_API USpellData : public UDataAsset {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly) ESpellType SpellType = ESpellType::EST_Boulder;
+	UPROPERTY(EditDefaultsOnly, Category = "General")
+	FName SpellName;
 
-	UPROPERTY(EditDefaultsOnly) UStaticMesh* Mesh = nullptr;
-	UPROPERTY(EditDefaultsOnly) UMaterialInterface* Material = nullptr;
-	UPROPERTY(EditDefaultsOnly) UNiagaraSystem* TrailFX = nullptr;
-	UPROPERTY(EditDefaultsOnly) UNiagaraSystem* ImpactFX = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category = "Visuals") 
+	UStaticMesh* Mesh = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Visuals") 
+	UMaterialInterface* Material = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Visuals") 
+	UNiagaraSystem* TrailFX = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Visuals") 
+	UNiagaraSystem* ImpactFX = nullptr;
 
-	UPROPERTY(EditDefaultsOnly) float Cooldown = 1.0f;
-	UPROPERTY(EditDefaultsOnly) float Speed = 3000.0f;
-	UPROPERTY(EditDefaultsOnly) float Damage = 25.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
+	float Cooldown = 1.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
+	float Speed = 3000.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
+	float Damage = 25.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Classes")
+	TSubclassOf<ASpell> Spell;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Classes")
+	TSubclassOf<ASpellVisual> SpellVisual;
 };
