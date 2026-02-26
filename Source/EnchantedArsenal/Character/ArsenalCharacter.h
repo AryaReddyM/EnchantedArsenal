@@ -89,6 +89,8 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetAttackType(EAttackType NewType);
+	
+	FHitResult TraceUnderCrosshairs();
 
 	// Getters
 	AWeapon* GetWeapon();

@@ -32,7 +32,11 @@ public:
 	float Cooldown = 1.0f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
+	float InitialSpeed = 1500.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
 	float Speed = 3000.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
+	float GravityScale = 1.0f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
 	float Damage = 25.0f;

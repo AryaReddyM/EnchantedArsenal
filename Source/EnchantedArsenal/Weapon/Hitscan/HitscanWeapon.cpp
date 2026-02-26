@@ -24,7 +24,7 @@ void AHitscanWeapon::Shoot() {
 
     LastShootTime = CurrentTime;
     
-    FHitResult CrosshairHit = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
+    FHitResult CrosshairHit = InstigatorPawn->TraceUnderCrosshairs();
 
     if (InstigatorPawn->IsLocallyControlled()) {
         InstigatorPawn->CombatComp->PlayShootMontage();

@@ -15,6 +15,7 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnchantedArsenal/Components/MagicComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 ////////////////////////////////////// Function Definitions //////////////////////////////////////
 
@@ -360,6 +361,42 @@ void AArsenalCharacter::ServerSetAttackType_Implementation(EAttackType NewType) 
 		if (CombatComp) CombatComp->UnequipWeapon();
 		if (MagicComp)  MagicComp->UnequipSpell();
 	}
+}
+
+FHitResult AArsenalCharacter::TraceUnderCrosshairs() {
+	FHitResult TraceHitResult;
+
+	if (!IsLocallyControlled()) return FHitResult();
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return FHitResult();
+
+	int32 SizeX = 0, SizeY = 0;
+	PC->GetViewportSize(SizeX, SizeY);
+	if (SizeX <= 0 || SizeY <= 0) return FHitResult();
+
+	const FVector2D CrosshairLocation(SizeX * 0.5f, SizeY * 0.5f);
+
+	FVector CrosshairWorldPos;
+	FVector CrosshairWorldDir;
+	if (!UGameplayStatics::DeprojectScreenToWorld(PC, CrosshairLocation, CrosshairWorldPos, CrosshairWorldDir))
+		return FHitResult();
+
+	const FVector Start = CrosshairWorldPos;
+	const FVector End = Start + CrosshairWorldDir * TRACE_LENGTH;
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	if (CombatComp->SpawnedWeapon) Params.AddIgnoredActor(CombatComp->SpawnedWeapon);
+	if (MagicComp->SpawnedSpell) Params.AddIgnoredActor(MagicComp->SpawnedSpell);
+
+	GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, Params);
+
+	if (!TraceHitResult.bBlockingHit) {
+		TraceHitResult.ImpactPoint = End;
+	}
+
+	return TraceHitResult;
 }
 
 ////////////////////////////////////// Getters //////////////////////////////////////

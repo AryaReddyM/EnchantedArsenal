@@ -24,6 +24,8 @@ public:
 	UPROPERTY(VisibleAnywhere) 
 	UStaticMeshComponent* MeshComp = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Data)
 	USpellData* Data;
+	UFUNCTION()
+	void OnRep_Data();
 };

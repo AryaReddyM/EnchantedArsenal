@@ -17,6 +17,8 @@ ASpellVisual::ASpellVisual() {
 
 void ASpellVisual::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ASpellVisual, Data);
 }
 
 void ASpellVisual::InitFromData() {
@@ -29,4 +31,8 @@ void ASpellVisual::InitFromData() {
 	if (Data->Material) {
 		MeshComp->SetMaterial(0, Data->Material);
 	}
+}
+
+void ASpellVisual::OnRep_Data() {
+	InitFromData();
 }

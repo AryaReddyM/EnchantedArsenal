@@ -38,8 +38,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiShoot(bool bTriggered);
 
-	FHitResult TraceUnderCrosshairs();
-
 	void SetSemiCounter(int Counter);
 	UFUNCTION(Server, Reliable)
 	void ServerSetSemiCounter(int32 NewCounter);

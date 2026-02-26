@@ -69,6 +69,9 @@ public:
 	UPROPERTY()
 	USpellInstance* ActiveSpell;
 	
+	UPROPERTY()
+	USpellData* SpellData;
+	
 	UPROPERTY(ReplicatedUsing=OnRep_SpawnedSpell)
 	ASpell* SpawnedSpell;
 	UFUNCTION()
@@ -86,4 +89,7 @@ public:
 	USpellData* SpikeAdder;
 
 	float LastCastTime = -1000.f;
+	
+	FVector SpawnLocation;
+	FVector Dir;
 };

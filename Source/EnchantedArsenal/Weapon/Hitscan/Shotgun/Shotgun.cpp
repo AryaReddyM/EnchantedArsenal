@@ -23,7 +23,7 @@ void AShotgun::Shoot() {
         InstigatorPawn->CombatComp->PlayShootMontage();
     }
 
-    FHitResult CrosshairHitResult = InstigatorPawn->CombatComp->TraceUnderCrosshairs();
+    FHitResult CrosshairHitResult = InstigatorPawn->TraceUnderCrosshairs();
 
     FVector CameraLoc = InstigatorPawn->CameraComp->GetComponentLocation();
     FVector CrosshairImpactPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;

@@ -1,12 +1,14 @@
 #include "MagicComponent.h"
 
 #include "Chaos/ChaosPerfTest.h"
+#include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Character/ArsenalCharacter.h"
 #include "EnchantedArsenal/Magic/Spell.h"
 #include "EnchantedArsenal/Magic/SpellData.h"
 #include "EnchantedArsenal/Magic/SpellInstance.h"
 #include "EnchantedArsenal/Magic/SpellVisual.h"
+#include "GameFramework/Pawn.h"
 
 UMagicComponent::UMagicComponent() {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -15,14 +17,8 @@ UMagicComponent::UMagicComponent() {
 void UMagicComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	if (SpawnedVisual) {
-		DOREPLIFETIME(UMagicComponent, SpawnedVisual);
-	}
-	
-	if (SpawnedSpell) {
-		DOREPLIFETIME(UMagicComponent, SpawnedSpell);
-	}
-	
+	DOREPLIFETIME(UMagicComponent, SpawnedVisual);
+	DOREPLIFETIME(UMagicComponent, SpawnedSpell);
 	DOREPLIFETIME(UMagicComponent, bCasting);
 	DOREPLIFETIME(UMagicComponent, CastState);
 	DOREPLIFETIME(UMagicComponent, EquippedSpellType);
@@ -61,29 +57,23 @@ void UMagicComponent::EquipSpell(ESpellType SpellType) {
 	
 	UnequipSpell();
 	
-	USpellData* CurrentSpellData = GetSpellDataForType(SpellType);
-	if (!CurrentSpellData) {
-		return;
-	}
-
-	if (!CurrentSpellData->SpellVisual) {
-		return;
-	}
+	SpellData = GetSpellDataForType(SpellType);
+	if (!SpellData || !SpellData->SpellVisual) return;
 
 	EquippedSpellType = SpellType;
 	
 	ActiveSpell = NewObject<USpellInstance>(Character);
-	ActiveSpell->Initialize(CurrentSpellData);
+	ActiveSpell->Initialize(SpellData);
 	
 	FActorSpawnParameters Params;
 	Params.Owner = GetOwner();
-	SpawnedVisual = GetWorld()->SpawnActor<ASpellVisual>(CurrentSpellData->SpellVisual, FTransform::Identity, Params);
+	SpawnedVisual = GetWorld()->SpawnActor<ASpellVisual>(SpellData->SpellVisual, FTransform::Identity, Params);
 	
 	if (!SpawnedVisual) {
 		return;
 	}
 
-	SpawnedVisual->Data = CurrentSpellData;
+	SpawnedVisual->Data = SpellData;
 	SpawnedVisual->InitFromData();
 	
 	USkeletalMeshComponent* CharMesh = Character->GetMesh();
@@ -114,16 +104,27 @@ void UMagicComponent::UnequipSpell() {
 }
 
 void UMagicComponent::Cast(bool bTriggered) {
+	if (!SpawnedVisual) return;
+	
 	if (!bTriggered) {
 		bCasting = false;
+
 		return;
 	}
 
-	if (!SpawnedVisual || !ActiveSpell || !ActiveSpell->Data) return;
+	if (EquippedSpellType == ESpellType::EST_None) return;
+
 	if (CastState != ECastState::Idle) return;
+	
+	
+	SpawnLocation = SpawnedVisual ? SpawnedVisual->GetActorLocation() : Character->GetActorLocation();
+
+	const FHitResult CrosshairHitResult = Character->TraceUnderCrosshairs();
+	const FVector TargetPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;
+	Dir = (TargetPoint - SpawnLocation).GetSafeNormal();
 
 	bCasting = true;
-	ServerCast(bTriggered);
+	ServerCast(true);
 }
 
 void UMagicComponent::ServerCast_Implementation(bool bTriggered) {
@@ -149,30 +150,31 @@ void UMagicComponent::MultiCast_Implementation(bool bTriggered) {
 	if (!bTriggered) return;
 	if (!Character) return;
 
-	USpellData* SpellData = nullptr;
-	if (ActiveSpell && ActiveSpell->Data) {
-		SpellData = ActiveSpell->Data;
-	} else {
-		SpellData = GetSpellDataForType(EquippedSpellType);
-	}
-
-	if (!SpellData || !SpellData->Spell) {
-		return;
-	}
-
 	if (Character->HasAuthority()) {
-		FTransform SpawnTransform = SpawnedVisual ? SpawnedVisual->GetActorTransform() : Character->GetActorTransform();
-		
 		FActorSpawnParameters Params;
 		Params.Owner = GetOwner();
 		Params.Instigator = Character;
-		SpawnedSpell = GetWorld()->SpawnActor<ASpell>(SpellData->Spell, SpawnTransform, Params);
-		
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		SpawnedSpell = GetWorld()->SpawnActorDeferred<ASpell>(
+			SpellData->Spell, 
+			FTransform(Dir.Rotation(), SpawnLocation), 
+			Params.Owner, 
+			Params.Instigator, 
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+		);
+
 		if (SpawnedSpell) {
-			SpawnedSpell->SpellType = EquippedSpellType;
+			SpawnedSpell->CollisionIgnoreOwner();
 			
+			SpawnedSpell->SpellType = EquippedSpellType;
 			SpawnedSpell->Data = SpellData;
+
 			SpawnedSpell->InitFromData();
+			
+			SpawnedSpell->FinishSpawning(FTransform(Dir.Rotation(), SpawnLocation));
+
+			SpawnedSpell->LaunchInDirection(Dir);
 		}
 	}
 	
@@ -188,49 +190,25 @@ void UMagicComponent::MultiCast_Implementation(bool bTriggered) {
 }
 
 void UMagicComponent::OnRep_SpawnedSpell() {
-	if (!Character) return;
-	
 	if (!SpawnedSpell) return;
-	
-	USpellData* SpellData = nullptr;
-	
-	if (ActiveSpell && ActiveSpell->Data) {
-		SpellData = ActiveSpell->Data;
-	} 
-	else {
-		SpellData = GetSpellDataForType(EquippedSpellType);
-	}
 
-	if (!SpellData || !SpellData->Spell) {
-		return;
-	}
-	
-	FTransform SpawnTransform = SpawnedVisual ? SpawnedVisual->GetActorTransform() : Character->GetActorTransform();
-		
-	FActorSpawnParameters Params;
-	Params.Owner = GetOwner();
-	Params.Instigator = Character;
-	SpawnedSpell = GetWorld()->SpawnActor<ASpell>(SpellData->Spell, SpawnTransform, Params);
+	SpawnedSpell->InitFromData();
 }
 
 void UMagicComponent::OnRep_SpawnedVisual() {
-	if (!Character) return;
+	if (!Character || !SpawnedVisual) return;
 
-	if (!SpawnedVisual) {
-		return;
-	}
+	USkeletalMeshComponent* Mesh = Character->GetMesh();
+	if (!Mesh) return;
 
-	USkeletalMeshComponent* CharMesh = Character->GetMesh();
-	if (!CharMesh) return;
+	static const FName HandSocket(TEXT("RightHandSocket"));
+	SpawnedVisual->AttachToComponent(
+		Mesh,
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		HandSocket
+	);
 
-	USpellData* SpellData = GetSpellDataForType(EquippedSpellType);
-	if (SpellData) {
-		SpawnedVisual->Data = SpellData;
-		SpawnedVisual->InitFromData();
-	}
-
-	const FName HandSocket(TEXT("RightHandSocket"));
-	SpawnedVisual->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
+	SpawnedVisual->InitFromData();
 }
 
 void UMagicComponent::OnRep_CastState() {
@@ -238,12 +216,12 @@ void UMagicComponent::OnRep_CastState() {
 
 void UMagicComponent::OnRep_EquippedSpellType() {
 	if (EquippedSpellType != ESpellType::EST_None && Character) {
-		USpellData* SpellData = GetSpellDataForType(EquippedSpellType);
 		if (SpellData) {
 			ActiveSpell = NewObject<USpellInstance>(Character);
 			ActiveSpell->Initialize(SpellData);
 		}
-	} else {
+	} 
+	else {
 		ActiveSpell = nullptr;
 	}
 }
