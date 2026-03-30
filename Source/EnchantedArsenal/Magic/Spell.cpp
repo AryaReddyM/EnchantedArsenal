@@ -68,7 +68,6 @@ void ASpell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveC
 	}
 
 	if (HasAuthority()) {
-		
 		if (UHealthComponent* HealthComp = OtherActor->FindComponentByClass<UHealthComponent>()) {
 				HealthComp->ApplyDamage(Data->Damage);
 
