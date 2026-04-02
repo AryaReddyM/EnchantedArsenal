@@ -1,227 +1,143 @@
 #include "MagicComponent.h"
-
-#include "Chaos/ChaosPerfTest.h"
-#include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Character/ArsenalCharacter.h"
 #include "EnchantedArsenal/Magic/Spell.h"
 #include "EnchantedArsenal/Magic/SpellData.h"
-#include "EnchantedArsenal/Magic/SpellInstance.h"
-#include "EnchantedArsenal/Magic/SpellVisual.h"
-#include "GameFramework/Pawn.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
 
 UMagicComponent::UMagicComponent() {
-	PrimaryComponentTick.bCanEverTick = true;
-}
-
-void UMagicComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(UMagicComponent, SpawnedVisual);
-	DOREPLIFETIME(UMagicComponent, SpawnedSpell);
-	DOREPLIFETIME(UMagicComponent, bCasting);
-	DOREPLIFETIME(UMagicComponent, CastState);
-	DOREPLIFETIME(UMagicComponent, EquippedSpellType);
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UMagicComponent::BeginPlay() {
 	Super::BeginPlay();
+	
+	SpellCooldownDurations.Add(ESpellType::EST_Boulder, Boulder ? Boulder->Cooldown : 1.f);
+	SpellCooldownDurations.Add(ESpellType::EST_SpikeAdder, SpikeAdder ? SpikeAdder->Cooldown : 1.f);
 }
 
-void UMagicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (CastState == ECastState::Cooldown && ActiveSpell && ActiveSpell->Data) {
-		const float CurrentTime = GetWorld()->GetTimeSeconds();
-		if (CurrentTime - LastCastTime >= ActiveSpell->Data->Cooldown) {
-			CastState = ECastState::Idle;
-		}
-	}
+void UMagicComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UMagicComponent, HeldSpell);
+	DOREPLIFETIME(UMagicComponent, CastState);
+	DOREPLIFETIME(UMagicComponent, EquippedSpellType);
 }
 
-USpellData* UMagicComponent::GetSpellDataForType(ESpellType SpellType) const {
-	switch (SpellType) {
-	case ESpellType::EST_Boulder:
-		return Boulder;
-	case ESpellType::EST_SpikeAdder:
-		return SpikeAdder;
-	default:
-		return nullptr;
-	}
+bool UMagicComponent::IsSpellOnCooldown(ESpellType SpellType) const {
+	return CooldownTimers.Contains(SpellType) && GetWorld()->GetTimerManager().IsTimerActive(CooldownTimers[SpellType]);
 }
 
 void UMagicComponent::EquipSpell(ESpellType SpellType) {
-	if (!Character || !Character->HasAuthority()) return;
-	
-	if (EquippedSpellType == SpellType && SpawnedVisual) return;
-	
+	if (!GetCharacter() || !GetCharacter()->HasAuthority()) return;
+	if (EquippedSpellType == SpellType && HeldSpell) return;
+
 	UnequipSpell();
-	
+
 	SpellData = GetSpellDataForType(SpellType);
-	if (!SpellData || !SpellData->SpellVisual) return;
+	if (!SpellData) return;
 
 	EquippedSpellType = SpellType;
 	
-	ActiveSpell = NewObject<USpellInstance>(Character);
-	ActiveSpell->Initialize(SpellData);
-	
-	FActorSpawnParameters Params;
-	Params.Owner = GetOwner();
-	SpawnedVisual = GetWorld()->SpawnActor<ASpellVisual>(SpellData->SpellVisual, FTransform::Identity, Params);
-	
-	if (!SpawnedVisual) {
-		return;
+	if (!IsSpellOnCooldown(SpellType)) {
+		SpawnHeldSpell();
 	}
-
-	SpawnedVisual->Data = SpellData;
-	SpawnedVisual->InitFromData();
-	
-	USkeletalMeshComponent* CharMesh = Character->GetMesh();
-	if (!CharMesh) {
-		SpawnedVisual->Destroy();
-		SpawnedVisual = nullptr;
-		return;
-	}
-
-	const FName HandSocket(TEXT("RightHandSocket"));
-	SpawnedVisual->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
-
-	CastState = ECastState::Idle;
 }
 
 void UMagicComponent::UnequipSpell() {
-	if (!Character || !Character->HasAuthority()) return;
-
-	if (SpawnedVisual) {
-		SpawnedVisual->Destroy();
-		SpawnedVisual = nullptr;
+	if (HeldSpell) {
+		HeldSpell->Destroy();
+		HeldSpell = nullptr;
 	}
-
-	ActiveSpell = nullptr;
 	EquippedSpellType = ESpellType::EST_None;
-	CastState = ECastState::Idle;
-	bCasting = false;
+	SpellData = nullptr;
 }
 
 void UMagicComponent::Cast(bool bTriggered) {
-	if (!SpawnedVisual) return;
-	
-	if (!bTriggered) {
-		bCasting = false;
+	if (!bTriggered || !HeldSpell || CastState != ECastState::ECS_Idle) return;
+	if (IsSpellOnCooldown(EquippedSpellType)) return;
 
-		return;
-	}
+	FVector SpawnLoc = HeldSpell->GetActorLocation();
+	const FHitResult Hit = GetCharacter()->TraceUnderCrosshairs();
+	FVector Target = Hit.bBlockingHit ? Hit.ImpactPoint : Hit.TraceEnd;
+	FVector LaunchDir = (Target - SpawnLoc).GetSafeNormal();
 
-	if (EquippedSpellType == ESpellType::EST_None) return;
-
-	if (CastState != ECastState::Idle) return;
-	
-	
-	SpawnLocation = SpawnedVisual ? SpawnedVisual->GetActorLocation() : Character->GetActorLocation();
-
-	const FHitResult CrosshairHitResult = Character->TraceUnderCrosshairs();
-	const FVector TargetPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;
-	Dir = (TargetPoint - SpawnLocation).GetSafeNormal();
-
-	bCasting = true;
-	ServerCast(true);
+	ServerCast(true, SpawnLoc, LaunchDir);
 }
 
-void UMagicComponent::ServerCast_Implementation(bool bTriggered) {
-	if (!bTriggered) {
-		bCasting = false;
-		return;
-	}
+void UMagicComponent::ServerCast_Implementation(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
+	if (!HeldSpell || IsSpellOnCooldown(EquippedSpellType)) return;
 
-	if (!ActiveSpell || !ActiveSpell->Data) return;
-	if (CastState != ECastState::Idle) return;
-
-	const float CurrentTime = GetWorld()->GetTimeSeconds();
-	if (CurrentTime - LastCastTime < ActiveSpell->Data->Cooldown) return;
-
-	bCasting = true;
-	LastCastTime = CurrentTime;
-	CastState = ECastState::Casting;
-	
-	MultiCast(bTriggered);
-}
-
-void UMagicComponent::MultiCast_Implementation(bool bTriggered) {
-	if (!bTriggered) return;
-	if (!Character) return;
-
-	if (Character->HasAuthority()) {
-		FActorSpawnParameters Params;
-		Params.Owner = GetOwner();
-		Params.Instigator = Character;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		SpawnedSpell = GetWorld()->SpawnActorDeferred<ASpell>(
-			SpellData->Spell, 
-			FTransform(Dir.Rotation(), SpawnLocation), 
-			Params.Owner, 
-			Params.Instigator, 
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-		);
-
-		if (SpawnedSpell) {
-			SpawnedSpell->CollisionIgnoreOwner();
-			
-			SpawnedSpell->SpellType = EquippedSpellType;
-			SpawnedSpell->Data = SpellData;
-
-			SpawnedSpell->InitFromData();
-			
-			SpawnedSpell->FinishSpawning(FTransform(Dir.Rotation(), SpawnLocation));
-
-			SpawnedSpell->LaunchInDirection(Dir);
+	ESpellType CastSpellType = EquippedSpellType;
+	FTimerHandle& Handle = CooldownTimers.FindOrAdd(CastSpellType);
+	GetWorld()->GetTimerManager().SetTimer(Handle, [this, CastSpellType]() {
+		if (EquippedSpellType == CastSpellType && !HeldSpell) {
+			SpawnHeldSpell();
+			if (GetCharacter()) GetCharacter()->AttackType = EAttackType::EAT_Magic;
 		}
-	}
-	
-	if (SpawnedVisual) {
-		SpawnedVisual->Destroy();
-		SpawnedVisual = nullptr;
-	}
+	}, SpellCooldownDurations.FindRef(CastSpellType), false);
 
-	if (Character->HasAuthority()) {
-		CastState = ECastState::Cooldown;
-		bCasting = false;
+	if (GetCharacter()) GetCharacter()->AttackType = EAttackType::EAT_Unarmed;
+
+	MultiCast(bTriggered, LaunchLocation, LaunchDir);
+}
+
+void UMagicComponent::MultiCast_Implementation(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
+	if (!GetCharacter() || !HeldSpell) return;
+
+	HeldSpell->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HeldSpell->SetActorLocationAndRotation(LaunchLocation, LaunchDir.Rotation());
+	HeldSpell->CollisionIgnoreOwner();
+	HeldSpell->SetHeldMode(false);
+
+	if (GetCharacter()->HasAuthority()) {
+		HeldSpell->LaunchInDirection(LaunchDir);
+		HeldSpell = nullptr;
 	}
 }
 
-void UMagicComponent::OnRep_SpawnedSpell() {
-	if (!SpawnedSpell) return;
+void UMagicComponent::SpawnHeldSpell() {
+	if (!GetCharacter() || !GetCharacter()->HasAuthority() || !SpellData) return;
 
-	SpawnedSpell->InitFromData();
+	FActorSpawnParameters Params;
+	Params.Owner = GetOwner();
+	Params.Instigator = GetCharacter();
+
+	HeldSpell = GetWorld()->SpawnActor<ASpell>(SpellData->Spell, FTransform::Identity, Params);
+	if (HeldSpell) {
+		HeldSpell->SpellType = EquippedSpellType;
+		HeldSpell->Data = SpellData;
+		HeldSpell->InitFromData();
+		HeldSpell->SetHeldMode(true);
+		HeldSpell->CollisionIgnoreOwner();
+		AttachHeldSpell();
+	}
 }
 
-void UMagicComponent::OnRep_SpawnedVisual() {
-	if (!Character || !SpawnedVisual) return;
-
-	USkeletalMeshComponent* Mesh = Character->GetMesh();
-	if (!Mesh) return;
-
-	static const FName HandSocket(TEXT("RightHandSocket"));
-	SpawnedVisual->AttachToComponent(
-		Mesh,
-		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-		HandSocket
-	);
-
-	SpawnedVisual->InitFromData();
-}
-
-void UMagicComponent::OnRep_CastState() {
+void UMagicComponent::AttachHeldSpell() {
+	if (HeldSpell && GetCharacter()) {
+		HeldSpell->AttachToComponent(GetCharacter()->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("RightHandSocket"));
+	}
 }
 
 void UMagicComponent::OnRep_EquippedSpellType() {
-	if (EquippedSpellType != ESpellType::EST_None && Character) {
-		if (SpellData) {
-			ActiveSpell = NewObject<USpellInstance>(Character);
-			ActiveSpell->Initialize(SpellData);
-		}
-	} 
-	else {
-		ActiveSpell = nullptr;
+	SpellData = GetSpellDataForType(EquippedSpellType);
+}
+
+void UMagicComponent::OnRep_HeldSpell() {
+	if (HeldSpell) {
+		HeldSpell->SetHeldMode(true);
+		HeldSpell->CollisionIgnoreOwner();
+		AttachHeldSpell();
 	}
+}
+
+AArsenalCharacter* UMagicComponent::GetCharacter() const {
+	return ::Cast<AArsenalCharacter>(GetOwner());
+}
+
+USpellData* UMagicComponent::GetSpellDataForType(ESpellType SpellType) const {
+	if (SpellType == ESpellType::EST_Boulder) return Boulder;
+	if (SpellType == ESpellType::EST_SpikeAdder) return SpikeAdder;
+	return nullptr;
 }

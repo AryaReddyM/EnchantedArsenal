@@ -10,6 +10,7 @@ class AWeapon;
 enum class EWeaponType : uint8;
 class UAnimMontage;
 enum class EAttackType : uint8;
+enum class ECastState : uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API UArsenalAnimInstance : public UAnimInstance {
@@ -78,4 +79,10 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
 	EAttackType AttackType;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Magic", meta = (AllowPrivateAccess = true))
+	bool bSpellCooldown;
+    
+	UPROPERTY(BlueprintReadOnly, Category = "Magic", meta = (AllowPrivateAccess = true))
+	bool bIsHoldingSpell;
 };

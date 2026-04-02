@@ -67,10 +67,6 @@ void AArsenalCharacter::PostInitializeComponents() {
 	if (CombatComp) {
 		CombatComp->Character = this;
 	}
-
-	if (MagicComp) {
-		MagicComp->Character = this;
-	}
 }
 
 //////////////// BeginPlay ////////////////
@@ -206,15 +202,15 @@ void AArsenalCharacter::ServerEquipWeapon_Implementation(EWeaponType WeaponType)
 
 //////////////// EquipSpell ////////////////
 void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
-	if (!MagicComp) return;
+	if (!MagicComp || MagicComp->IsSpellOnCooldown(SpellType)) return;
+
+	AttackType = EAttackType::EAT_Magic;
 
 	if (HasAuthority()) {
-		// Server: Set Attack Type and Equip Immediately
 		ServerSetAttackType(EAttackType::EAT_Magic);
 		MagicComp->EquipSpell(SpellType);
 	}
 	else {
-		// Client: Ask The Server to Equip
 		ServerEquipSpell(SpellType);
 	}
 }
@@ -224,10 +220,6 @@ void AArsenalCharacter::ServerEquipSpell_Implementation(ESpellType SpellType) {
 	if (!MagicComp) return;
 
 	ServerSetAttackType(EAttackType::EAT_Magic);
-
-	// Already Equipped this Spell -> Return
-	if (MagicComp->SpawnedVisual) return;
-
 	MagicComp->EquipSpell(SpellType);
 }
 
@@ -347,9 +339,10 @@ void AArsenalCharacter::ServerSetAiming_Implementation(bool bInAiming) {
 
 //////////////// ServerSetAttackType ////////////////
 void AArsenalCharacter::ServerSetAttackType_Implementation(EAttackType NewType) {
+	if (AttackType == NewType) return;
+
 	AttackType = NewType;
 
-	// Unequips Opposite Attack Type
 	switch (AttackType) {
 	case EAttackType::EAT_Weapon:
 		if (MagicComp) MagicComp->UnequipSpell();
@@ -360,6 +353,7 @@ void AArsenalCharacter::ServerSetAttackType_Implementation(EAttackType NewType) 
 	default:
 		if (CombatComp) CombatComp->UnequipWeapon();
 		if (MagicComp)  MagicComp->UnequipSpell();
+		break;
 	}
 }
 
@@ -387,11 +381,15 @@ FHitResult AArsenalCharacter::TraceUnderCrosshairs() {
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
-	if (CombatComp->SpawnedWeapon) Params.AddIgnoredActor(CombatComp->SpawnedWeapon);
-	if (MagicComp->SpawnedSpell) Params.AddIgnoredActor(MagicComp->SpawnedSpell);
+    
+	if (CombatComp && CombatComp->SpawnedWeapon) Params.AddIgnoredActor(CombatComp->SpawnedWeapon);
+    
+	if (MagicComp && MagicComp->HeldSpell) {
+		Params.AddIgnoredActor(MagicComp->HeldSpell);
+	}
 
 	GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, Params);
-
+    
 	if (!TraceHitResult.bBlockingHit) {
 		TraceHitResult.ImpactPoint = End;
 	}

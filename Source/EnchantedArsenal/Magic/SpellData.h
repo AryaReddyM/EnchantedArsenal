@@ -1,12 +1,12 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "GameplayTagContainer.h"
 #include "SpellData.generated.h"
 
 class UStaticMesh;
 class UNiagaraSystem;
 class UMaterialInterface;
-class ASpellVisual;
 class ASpell;
 
 UCLASS(BlueprintType)
@@ -41,9 +41,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Stats") 
 	float Damage = 25.0f;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Classes")
-	TSubclassOf<ASpell> Spell;
+	UPROPERTY(EditDefaultsOnly, Category = "Tags")
+	FGameplayTagContainer DefaultTags;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Classes")
-	TSubclassOf<ASpellVisual> SpellVisual;
+	TSubclassOf<ASpell> Spell;
 };

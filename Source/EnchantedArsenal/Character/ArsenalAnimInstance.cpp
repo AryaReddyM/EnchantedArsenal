@@ -3,6 +3,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
+#include "EnchantedArsenal/Components/MagicComponent.h"
 
 void UArsenalAnimInstance::NativeInitializeAnimation() {
 	Super::NativeInitializeAnimation();
@@ -99,6 +100,15 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	else {
 		bMovementHold = (TimeMoving > 2.5f);
 	}
-
+	
 	AttackType = ArsenalCharacter->AttackType;
+	if (ArsenalCharacter->MagicComp) {
+		bSpellCooldown = ArsenalCharacter->MagicComp->IsSpellOnCooldown(ArsenalCharacter->MagicComp->EquippedSpellType);
+        
+		bIsHoldingSpell = (ArsenalCharacter->MagicComp->HeldSpell != nullptr);
+	}
+	else {
+		bSpellCooldown = false;
+		bIsHoldingSpell = false;
+	}
 }

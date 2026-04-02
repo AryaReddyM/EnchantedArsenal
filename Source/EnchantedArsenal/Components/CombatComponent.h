@@ -4,7 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "CombatComponent.generated.h"
 
-#define TRACE_LENGTH 80000;
+#define TRACE_LENGTH 80000
 
 class AArsenalCharacter;
 class AArsenalPlayerController;

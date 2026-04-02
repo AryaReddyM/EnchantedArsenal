@@ -2,45 +2,44 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameplayTagContainer.h"
 #include "Spell.generated.h"
 
 class USphereComponent;
 class UProjectileMovementComponent;
-enum class ESpellType : uint8;
 class USpellData;
+enum class ESpellType : uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API ASpell : public AActor {
 	GENERATED_BODY()
-	
+
 public:
 	ASpell();
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	virtual void BeginPlay() override;
 
 	void InitFromData();
 	void LaunchInDirection(const FVector& Dir);
-	
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-	
+	void SetHeldMode(bool bHeld);
 	void CollisionIgnoreOwner();
 
-	UPROPERTY(VisibleAnywhere) USphereComponent* Collision = nullptr;
-
-	UPROPERTY(VisibleAnywhere) UStaticMeshComponent* MeshComp = nullptr;
-
-	UPROPERTY(VisibleAnywhere) UProjectileMovementComponent* ProjComp = nullptr;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spell Properties", ReplicatedUsing = OnRep_SpellType)
-	ESpellType SpellType;
+protected:
 	UFUNCTION()
-	void OnRep_SpellType();
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Data)
+public:
+	UPROPERTY(VisibleAnywhere) USphereComponent* Collision;
+	UPROPERTY(VisibleAnywhere) UStaticMeshComponent* MeshComp;
+	UPROPERTY(VisibleAnywhere) UProjectileMovementComponent* ProjComp;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Data)
 	USpellData* Data = nullptr;
-	UFUNCTION()
-	void OnRep_Data();
+	UFUNCTION() void OnRep_Data();
+
+	UPROPERTY(Replicated) 
+	ESpellType SpellType;
+	UPROPERTY(Replicated) 
+	FGameplayTagContainer SpellTags;
+	UPROPERTY(Replicated) 
+	bool bIsHeld = false;
 };

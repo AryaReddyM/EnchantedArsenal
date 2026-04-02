@@ -4,11 +4,9 @@
 #include "Components/ActorComponent.h"
 #include "MagicComponent.generated.h"
 
-class ASpellVisual;
 class AArsenalCharacter;
 class ASpell;
 class USpellData;
-class USpellInstance;
 
 UENUM(BlueprintType)
 enum class ESpellType : uint8 {
@@ -20,9 +18,8 @@ enum class ESpellType : uint8 {
 
 UENUM(BlueprintType)
 enum class ECastState : uint8 {
-	Idle UMETA(DisplayName = "Idle"),
-	Casting UMETA(DisplayName = "Casting"),
-	Cooldown UMETA(DisplayName = "Cooldown")
+	ECS_Idle UMETA(DisplayName = "Idle"),
+	ECS_Casting UMETA(DisplayName = "Casting")
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -31,65 +28,52 @@ class ENCHANTEDARSENAL_API UMagicComponent : public UActorComponent {
 
 public:
 	UMagicComponent();
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-protected:
-	virtual void BeginPlay() override;
-
-public:	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void EquipSpell(ESpellType SpellType);
 	void UnequipSpell();
-
 	void Cast(bool bTriggered);
-	UFUNCTION(Server, Reliable)
-	void ServerCast(bool bTriggered);
-	UFUNCTION(NetMulticast, Reliable)
-	void MultiCast(bool bTriggered);
 
+	UFUNCTION(Server, Reliable)
+	void ServerCast(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiCast(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
+
+	bool IsSpellOnCooldown(ESpellType SpellType) const;
+
+	virtual void BeginPlay() override;
+
+	void SpawnHeldSpell();
+	void AttachHeldSpell();
+	AArsenalCharacter* GetCharacter() const;
 	USpellData* GetSpellDataForType(ESpellType SpellType) const;
 
-	AArsenalCharacter* Character;
-	
 	UPROPERTY(Replicated)
-	bool bCasting;
-	
-	UPROPERTY(ReplicatedUsing=OnRep_CastState)
-	ECastState CastState = ECastState::Idle;
-	UFUNCTION()
-	void OnRep_CastState();
+	ECastState CastState = ECastState::ECS_Idle;
 
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedSpellType)
 	ESpellType EquippedSpellType = ESpellType::EST_None;
+
 	UFUNCTION()
 	void OnRep_EquippedSpellType();
-	
-	UPROPERTY()
-	USpellInstance* ActiveSpell;
-	
+
 	UPROPERTY()
 	USpellData* SpellData;
-	
-	UPROPERTY(ReplicatedUsing=OnRep_SpawnedSpell)
-	ASpell* SpawnedSpell;
-	UFUNCTION()
-	void OnRep_SpawnedSpell();
-	
-	UPROPERTY(ReplicatedUsing=OnRep_SpawnedVisual)
-	ASpellVisual* SpawnedVisual;
-	UFUNCTION()
-	void OnRep_SpawnedVisual();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spells")
+	UPROPERTY(ReplicatedUsing=OnRep_HeldSpell)
+	ASpell* HeldSpell;
+
+	UFUNCTION()
+	void OnRep_HeldSpell();
+
+	UPROPERTY(EditAnywhere, Category = "Spells")
 	USpellData* Boulder;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spells")
+
+	UPROPERTY(EditAnywhere, Category = "Spells")
 	USpellData* SpikeAdder;
 
-	float LastCastTime = -1000.f;
-	
-	FVector SpawnLocation;
-	FVector Dir;
+	// Server-only maps for cooldown logic
+	TMap<ESpellType, float> SpellCooldownDurations;
+	TMap<ESpellType, FTimerHandle> CooldownTimers;
 };
