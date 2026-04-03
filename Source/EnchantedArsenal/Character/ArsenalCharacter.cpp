@@ -204,8 +204,6 @@ void AArsenalCharacter::ServerEquipWeapon_Implementation(EWeaponType WeaponType)
 void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 	if (!MagicComp || MagicComp->IsSpellOnCooldown(SpellType)) return;
 
-	AttackType = EAttackType::EAT_Magic;
-
 	if (HasAuthority()) {
 		ServerSetAttackType(EAttackType::EAT_Magic);
 		MagicComp->EquipSpell(SpellType);
