@@ -109,6 +109,11 @@ public:
 	// Camera
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* CameraComp;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UArrowComponent* HipCameraPosComp;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UArrowComponent* AimCameraPosComp;
 
 	// Collision
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -203,7 +208,7 @@ public:
 
 	// Lerp time in between ADS and Default
 	UPROPERTY(EditAnywhere, Category = "Aim")
-	float ADSTime = 0.5f;
+	float ADSSpeed = 10.0f;
 
 	// Helps Calculate Speed for Animation
 	UPROPERTY(EditAnywhere, Category = Movement)

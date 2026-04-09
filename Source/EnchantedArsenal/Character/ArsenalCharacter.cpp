@@ -6,6 +6,7 @@
 #include "InputAction.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Components/ArrowComponent.h"
 #include "Components/InputComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Components/HealthComponent.h"
@@ -35,6 +36,12 @@ AArsenalCharacter::AArsenalCharacter() {
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera Component"));
 	CameraComp->SetupAttachment(SpringArmComp);
+	
+	HipCameraPosComp = CreateDefaultSubobject<UArrowComponent>(TEXT("Hip Camera Position Component"));
+	HipCameraPosComp->SetupAttachment(SpringArmComp);
+	
+	AimCameraPosComp = CreateDefaultSubobject<UArrowComponent>(TEXT("Aim Camera Position Component"));
+	AimCameraPosComp->SetupAttachment(GetMesh(), "head");
 	
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 	CombatComp->SetIsReplicated(true);
@@ -114,8 +121,16 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 	}
 
 	// ADS Smoothing
-	float TargetBoomLength = IsAiming() ? AimCameraBoomLength : HipCameraBoomLength;
-	SpringArmComp->TargetArmLength = FMath::FInterpTo(SpringArmComp->TargetArmLength, TargetBoomLength, DeltaTime, ADSTime);
+	if (IsAiming()) {
+		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(), AimCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
+		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(), AimCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
+		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation));
+	}
+	else {
+		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(), HipCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
+		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(), HipCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
+		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation));
+	}
 }
 
 //////////////// Input ////////////////

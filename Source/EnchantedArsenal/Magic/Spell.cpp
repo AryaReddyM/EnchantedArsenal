@@ -90,7 +90,7 @@ void ASpell::SetHeldMode(bool bHeld) {
 }
 
 void ASpell::LaunchInDirection(const FVector& Dir) {
-	if (ProjComp) {
+	if (ProjComp) {    
 		ProjComp->Velocity = Dir.GetSafeNormal() * ProjComp->InitialSpeed;
 		ProjComp->Activate(true);
 	}
