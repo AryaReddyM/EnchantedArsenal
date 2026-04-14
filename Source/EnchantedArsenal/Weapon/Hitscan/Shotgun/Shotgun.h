@@ -14,8 +14,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	float Pellets;
 
-	TArray<FVector> HitLocations;
-
 	UPROPERTY(EditAnywhere)
 	float PelletAngle;
 };

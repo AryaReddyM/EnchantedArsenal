@@ -17,8 +17,6 @@ void AShotgun::Shoot() {
 
     LastShootTime = CurrentTime;
 
-    HitLocations.Reset();
-
     if (InstigatorPawn->IsLocallyControlled() && InstigatorPawn->CombatComp) {
         InstigatorPawn->CombatComp->PlayShootMontage();
     }
@@ -29,35 +27,35 @@ void AShotgun::Shoot() {
     FVector CrosshairImpactPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;
     FVector AimDir = (CrosshairImpactPoint - CameraLoc).GetSafeNormal();
 
+    const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
+    if (!MuzzleFlashSocket) return;
+    MuzzleLocation = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
+
+    FCollisionQueryParams PelletParams;
+    PelletParams.AddIgnoredActor(InstigatorPawn);
+    PelletParams.AddIgnoredActor(this);
+
     for (int i = 0; i < Pellets; i++) {
         FVector PelletDir = AimDir;
         PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::UpVector);
         PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::RightVector);
 
-        FVector End = CameraLoc + PelletDir * 10000.0f;
+        const FVector End = CameraLoc + PelletDir * 10000.0f;
         FHitResult PelletHit;
-        GetWorld()->LineTraceSingleByChannel(PelletHit, CameraLoc, End, ECollisionChannel::ECC_Visibility);
+        GetWorld()->LineTraceSingleByChannel(PelletHit, CameraLoc, End, ECollisionChannel::ECC_Visibility, PelletParams);
 
-        HitLocations.Add(PelletHit.bBlockingHit ? PelletHit.ImpactPoint : End);
-    }
+        const bool bPelletHit = PelletHit.bBlockingHit;
+        const FVector PelletImpact = bPelletHit ? PelletHit.ImpactPoint : End;
 
-    const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-    if (!MuzzleFlashSocket) return;
-
-    bool bHitSomething = false;
-    MuzzleLocation = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
-
-    for (const FVector& ImpactPoint : HitLocations) {
         if (InstigatorPawn->IsLocallyControlled()) {
-            bHitSomething = CrosshairHitResult.bBlockingHit;
-            LocalShootEffects(MuzzleLocation, ImpactPoint, CrosshairHitResult);
+            LocalShootEffects(MuzzleLocation, PelletImpact, PelletHit);
         }
 
         if (!HasAuthority()) {
-            ServerShoot(bHitSomething, ImpactPoint);
+            ServerShoot(bPelletHit, PelletImpact);
         }
         else {
-            ServerProcessShot(bHitSomething, ImpactPoint);
+            ServerProcessShot(bPelletHit, PelletImpact);
         }
     }
 
