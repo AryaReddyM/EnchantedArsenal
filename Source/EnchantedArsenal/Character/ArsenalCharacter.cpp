@@ -249,14 +249,7 @@ void AArsenalCharacter::Aim() {
 }
 
 void AArsenalCharacter::AimReleased() {
-	switch (AttackType) {
-	case EAttackType::EAT_Unarmed:
-		// Unarmed: No Aiming
-		break;
-	default:
-		// Everything Else: Allow Aiming
-		SetAiming(false);
-	}
+	SetAiming(false);
 }
 
 //////////////// Shoot / ShootStarted / ShootReleased ////////////////

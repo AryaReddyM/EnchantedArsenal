@@ -202,10 +202,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float HipCameraBoomLength = 300.0f;
 
-	// POV when ADS
-	UPROPERTY(EditAnywhere, Category = "Aim")
-	float AimCameraBoomLength = 150.0f;
-
 	// Lerp time in between ADS and Default
 	UPROPERTY(EditAnywhere, Category = "Aim")
 	float ADSSpeed = 10.0f;
