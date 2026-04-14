@@ -103,7 +103,8 @@ void UMagicComponent::SpawnHeldSpell() {
 	Params.Owner = GetOwner();
 	Params.Instigator = GetCharacter();
 
-	HeldSpell = GetWorld()->SpawnActor<ASpell>(SpellData->Spell, FTransform::Identity, Params);
+	const FTransform SpawnXf = GetCharacter()->GetMesh()->GetSocketTransform(FName("RightHandSocket"));
+	HeldSpell = GetWorld()->SpawnActor<ASpell>(SpellData->Spell, SpawnXf, Params);
 	if (HeldSpell) {
 		HeldSpell->SpellType = EquippedSpellType;
 		HeldSpell->Data = SpellData;
