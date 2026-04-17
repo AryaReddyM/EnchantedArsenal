@@ -310,17 +310,8 @@ void AArsenalCharacter::HandleDeath() {
 	Destroy();
 
 	// Destroys Character Equipment
-	switch (AttackType) {
-	case EAttackType::EAT_Weapon:
-		if (MagicComp) MagicComp->UnequipSpell();
-		break;
-	case EAttackType::EAT_Magic:
-		if (CombatComp) CombatComp->UnequipWeapon();
-		break;
-	default:
-		if (CombatComp) CombatComp->UnequipWeapon();
-		if (MagicComp)  MagicComp->UnequipSpell();
-	}
+	if (CombatComp) CombatComp->UnequipWeapon();
+	if (MagicComp)  MagicComp->UnequipSpell();
 }
 
 //////////////// AddRecoil ////////////////
