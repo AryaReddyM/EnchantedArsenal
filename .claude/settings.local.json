@@ -3,7 +3,8 @@
     "allow": [
       "Bash(xargs grep:*)",
       "Bash(find 'C:\\\\Unreal Engine stuff\\\\Projects\\\\Long-term\\\\EnchantedArsenal\\\\Source\\\\EnchantedArsenal\\\\Weapon' -type f \\\\\\(-name *.h -o -name *.cpp \\\\\\))",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(find \"C:/Unreal Engine stuff/Projects/Long-term/EnchantedArsenal/Source/\" -name \"*.h\" -exec grep -l \"ESpellType\" {} +)"
     ]
   }
 }

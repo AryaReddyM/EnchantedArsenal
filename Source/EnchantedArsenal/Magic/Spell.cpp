@@ -3,7 +3,6 @@
 #include "SpellData.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "EnchantedArsenal/Components/HealthComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "EnchantedArsenal/Components/MagicComponent.h"
 
@@ -80,10 +79,16 @@ void ASpell::SetHeldMode(bool bHeld) {
 	if (bHeld) {
 		SetReplicateMovement(false);
 		ProjComp->Deactivate();
-		Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	} else {
-		SetReplicateMovement(true);
+
 		Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		Collision->SetCollisionResponseToAllChannels(ECR_Overlap);
+
+		CollisionIgnoreOwner();
+	} 
+	else {
+		SetReplicateMovement(true);
+
+		Collision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		Collision->SetCollisionResponseToAllChannels(ECR_Block);
 		Collision->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
@@ -98,36 +103,9 @@ void ASpell::LaunchInDirection(const FVector& Dir) {
 	}
 }
 
-void ASpell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
-	if (bIsHeld || !OtherActor || OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
-
-	if (HasAuthority()) {
-		if (UHealthComponent* HealthComp = OtherActor->FindComponentByClass<UHealthComponent>()) {
-			HealthComp->ApplyDamage(Data ? Data->Damage : 10.f);
-			
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Health: ") + FString::SanitizeFloat(HealthComp->CurrentHealth));
-		}
-		Destroy();
-	}
-}
+void ASpell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {}
 
 void ASpell::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-	if (!OtherActor || OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
-	
-	ASpell* OtherSpell = Cast<ASpell>(OtherActor);
-	if (!OtherSpell) {
-		return;
-	}
-	
-	if (HasAuthority()) {
-		switch (OtherSpell->SpellType) {
-		case ESpellType::EST_SpikeAdder:
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Spike Adder"));
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 void ASpell::OnRep_Data() { InitFromData(); }

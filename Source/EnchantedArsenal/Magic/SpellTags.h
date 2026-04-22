@@ -1,0 +1,7 @@
+#pragma once
+
+#include "NativeGameplayTags.h"
+
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Base_Boulder);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Base_SpikeAdder);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Modifier_Spiked);
