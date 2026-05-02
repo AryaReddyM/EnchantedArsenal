@@ -6,14 +6,17 @@
 #include "InputAction.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "Components/ArrowComponent.h"
 #include "Components/InputComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Components/ProgressBar.h"
 #include "EnchantedArsenal/Components/HealthComponent.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
 #include "EnchantedArsenal/Magic/Spell.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/Image.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnchantedArsenal/Components/MagicComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -93,6 +96,16 @@ void AArsenalCharacter::BeginPlay() {
 
 	// Adds HandleDeath Function to OnDeath Delegate in HealthComponent
 	HealthComp->OnDeath.AddDynamic(this, &AArsenalCharacter::HandleDeath);
+	
+	// Create HUD
+	if (IsLocallyControlled() && HUD) {
+		HUD->AddToViewport();
+
+		UProgressBar* FoundBar = Cast<UProgressBar>(HUD->GetWidgetFromName("HealthBar"));
+		if (UHealthComponent* ActiveHealthComp = FindComponentByClass<UHealthComponent>()) {
+			ActiveHealthComp->SetHealthBar(FoundBar);
+		}
+	}
 }
 
 //////////////// Tick ////////////////
@@ -130,6 +143,67 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(), HipCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
 		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(), HipCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
 		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation));
+	}
+	
+	// Dynamic Crosshair
+	float Velocity = GetVelocity().Size();
+	float BaseSpread = 20.f;
+	float MovementMultiplier = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 600.f), FVector2D(0.f, 60.f), Velocity);
+    float ADSMultiplier = (IsAiming() && CombatComp->SpawnedWeapon->WeaponType != EWeaponType::EWT_Unarmed) ? 0.5f : 1.0f;
+
+	TargetVisualSpread = (BaseSpread + MovementMultiplier) * ADSMultiplier;
+
+	CurrentVisualSpread = FMath::FInterpTo(CurrentVisualSpread, TargetVisualSpread, DeltaTime, InterpSpeed);
+
+	if (HUD) {
+		float WeaponBaseSpread = 15.f;
+		float MovementEffect = 5.f;
+		float InterpSpeedForWeapon = 15.f;
+
+		if (CombatComp && CombatComp->SpawnedWeapon) {
+			switch (CombatComp->SpawnedWeapon->WeaponType) {
+			case EWeaponType::EWT_Pistol:
+				WeaponBaseSpread = 15.f;
+				MovementEffect = 10.f;
+				break;
+
+			case EWeaponType::EWT_Rifle:
+				WeaponBaseSpread = 25.f;
+				MovementEffect = 50.f;
+				break;
+
+			case EWeaponType::EWT_SMG:
+				WeaponBaseSpread = 20.f;
+				MovementEffect = 10.f;
+				break;
+
+			case EWeaponType::EWT_Shotgun:
+				WeaponBaseSpread = 55.f;
+				MovementEffect = 20.f;
+				break;
+
+			default:
+				break;
+			}
+		}
+
+	    float VelocityFactor = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 600.f), FVector2D(0.f, MovementEffect), Velocity);
+
+	    float TargetSpread = (WeaponBaseSpread + VelocityFactor) * ADSMultiplier;
+
+	    CurrentVisualSpread = FMath::FInterpTo(CurrentVisualSpread, TargetSpread, DeltaTime, InterpSpeedForWeapon);
+
+	    UImage* Top = Cast<UImage>(HUD->GetWidgetFromName("CrosshairUp"));
+	    UImage* Bottom = Cast<UImage>(HUD->GetWidgetFromName("CrosshairDown"));
+	    UImage* Left = Cast<UImage>(HUD->GetWidgetFromName("CrosshairLeft"));
+	    UImage* Right = Cast<UImage>(HUD->GetWidgetFromName("CrosshairRight"));
+
+	    if (Top && Bottom && Left && Right) {
+		    Top->SetRenderTranslation(FVector2D(0.f, -CurrentVisualSpread));
+	    	Bottom->SetRenderTranslation(FVector2D(0.f, CurrentVisualSpread));
+	    	Left->SetRenderTranslation(FVector2D(-CurrentVisualSpread, 0.f));
+	    	Right->SetRenderTranslation(FVector2D(CurrentVisualSpread, 0.f));
+	    }
 	}
 }
 

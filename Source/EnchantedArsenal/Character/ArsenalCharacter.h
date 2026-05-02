@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 #include "ArsenalCharacter.generated.h"
 
+class UImage;
+
 UENUM(BlueprintType)
 enum class EAttackType : uint8 {
 	EAT_Initial UMETA(DisplayName = "Initial Type"),
@@ -197,6 +199,10 @@ public:
 	UInputAction* ShootAction;
 
 	//////////////// Utilities ////////////////
+	
+	// HUD
+	UPROPERTY(EditAnywhere)
+	UUserWidget* HUD; 
 
 	// POV when Default
 	UPROPERTY(EditAnywhere, Category = "Aim")
@@ -233,4 +239,10 @@ public:
 	EAttackType AttackType = EAttackType::EAT_Unarmed;
 	UFUNCTION()
 	void OnRep_AttackType();
+	
+	// Crosshair Variables
+	float CurrentVisualSpread;
+	float TargetVisualSpread;
+	UPROPERTY(EditAnywhere, Category = "Crosshair")
+	float InterpSpeed = 15.f;
 };
