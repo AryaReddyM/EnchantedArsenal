@@ -9,3 +9,13 @@ float USpellData::GetDamage(const FGameplayTagContainer& ActiveTags) const {
 	}
 	return Total;
 }
+
+UMaterialInterface* USpellData::GetMaterial(const FGameplayTagContainer& ActiveTags) const {
+	UMaterialInterface* Mat = Material;
+	for (const FTagModifier& Mod : TagModifiers) {
+		if (ActiveTags.HasTag(Mod.Tag)) {
+			Mat = Mod.MaterialOverride;
+		}
+	}
+	return Mat;
+}

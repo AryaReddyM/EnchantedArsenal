@@ -18,6 +18,9 @@ struct FTagModifier {
 
 	UPROPERTY(EditDefaultsOnly)
 	float BonusDamage = 0.0f;
+	
+	UPROPERTY(EditDefaultsOnly)
+	UMaterialInterface* MaterialOverride = nullptr;
 };
 
 UCLASS(BlueprintType)
@@ -65,4 +68,5 @@ public:
 	TSubclassOf<ASpell> Spell;
 
 	float GetDamage(const FGameplayTagContainer& ActiveTags) const;
+	UMaterialInterface* GetMaterial(const FGameplayTagContainer& ActiveTags) const;
 };

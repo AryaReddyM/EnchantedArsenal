@@ -41,6 +41,7 @@ void ABoulder::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 	
 	if (HasAuthority() && OtherSpell->Data) {
 		SpellTags.AppendTags(OtherSpell->Data->ComboGrantTags);
+		OnRep_SpellTags();
 		OtherSpell->Destroy();
 	}
 }

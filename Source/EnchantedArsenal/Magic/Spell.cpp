@@ -45,14 +45,14 @@ void ASpell::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 
 void ASpell::InitFromData() {
 	if (!Data) return;
+	SpellTags.AppendTags(Data->DefaultTags);
 	if (MeshComp && Data->Mesh) MeshComp->SetStaticMesh(Data->Mesh);
-	if (MeshComp && Data->Material) MeshComp->SetMaterial(0, Data->Material);
+	if (MeshComp && Data->Material) MeshComp->SetMaterial(0, Data->GetMaterial(SpellTags));
 	if (ProjComp) {
 		ProjComp->InitialSpeed = Data->InitialSpeed;
 		ProjComp->MaxSpeed = Data->Speed;
 		ProjComp->ProjectileGravityScale = Data->GravityScale;
 	}
-	SpellTags.AppendTags(Data->DefaultTags);
 }
 
 void ASpell::CollisionIgnoreOwner() {
@@ -108,4 +108,12 @@ void ASpell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveC
 void ASpell::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 }
 
-void ASpell::OnRep_Data() { InitFromData(); }
+void ASpell::OnRep_Data() {
+	InitFromData();
+}
+
+void ASpell::OnRep_SpellTags() {
+	if (MeshComp && Data && Data->Material) {
+		MeshComp->SetMaterial(0, Data->GetMaterial(SpellTags));
+	}
+}

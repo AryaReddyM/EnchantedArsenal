@@ -29,18 +29,26 @@ public:
 	UFUNCTION()
 	virtual void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
-	UPROPERTY(VisibleAnywhere) USphereComponent* Collision;
-	UPROPERTY(VisibleAnywhere) UStaticMeshComponent* MeshComp;
-	UPROPERTY(VisibleAnywhere) UProjectileMovementComponent* ProjComp;
+	UPROPERTY(VisibleAnywhere) 
+	USphereComponent* Collision;
+	UPROPERTY(VisibleAnywhere) 
+	UStaticMeshComponent* MeshComp;
+	UPROPERTY(VisibleAnywhere) 
+	UProjectileMovementComponent* ProjComp;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Data)
 	USpellData* Data = nullptr;
-	UFUNCTION() void OnRep_Data();
+	UFUNCTION() 
+	void OnRep_Data();
 
 	UPROPERTY(Replicated) 
 	ESpellType SpellType;
-	UPROPERTY(Replicated) 
+	
+	UPROPERTY(ReplicatedUsing = OnRep_SpellTags) 
 	FGameplayTagContainer SpellTags;
+	UFUNCTION()
+	void OnRep_SpellTags();
+	
 	UPROPERTY(Replicated) 
 	bool bIsHeld = false;
 };
