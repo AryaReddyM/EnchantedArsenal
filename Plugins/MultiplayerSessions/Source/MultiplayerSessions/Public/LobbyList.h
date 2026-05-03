@@ -29,14 +29,16 @@ public:
 
 protected:
 	virtual bool Initialize() override;
+	virtual void NativeDestruct() override;
 
 public:
 	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
 
-	void UpdateLobbyList();
+	void RebuildList(const TArray<FOnlineSessionSearchResult>& SessionResults);
 
-	UFUNCTION()
-	void JoinClickedSession();
+	void RequestRefresh();
+
+	void JoinSpecificSession(const FOnlineSessionSearchResult& Result);
 
 	UFUNCTION()
 	void BackButtonClicked();
@@ -52,13 +54,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> LobbyName;
 
-	ULobbyName* LobbyNameRef;
-
 	UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;
-
-	FString Username;
-
-	bool JoinButtonBinded;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnHideMenu HideMenu;

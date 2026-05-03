@@ -6,7 +6,10 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "OnlineSessionSettings.h"
 #include "LobbyName.generated.h"
+
+class ULobbyList;
 
 UCLASS()
 class MULTIPLAYERSESSIONS_API ULobbyName : public UUserWidget
@@ -14,11 +17,20 @@ class MULTIPLAYERSESSIONS_API ULobbyName : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void UpdateLobby(FString Username);
+	void Setup(const FOnlineSessionSearchResult& InResult, ULobbyList* InOwner);
+
+	UFUNCTION()
+	void OnJoinClicked();
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* LobbyNameText;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* LobbyJoinButton;
+
+private:
+	FOnlineSessionSearchResult Result;
+
+	UPROPERTY()
+	ULobbyList* Owner = nullptr;
 };

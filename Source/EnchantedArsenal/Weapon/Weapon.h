@@ -5,6 +5,9 @@
 #include "Weapon.generated.h"
 
 class UTexture2D;
+class USoundCue;
+class UParticleSystem;
+class UAnimMontage;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetWeaponMesh);
 

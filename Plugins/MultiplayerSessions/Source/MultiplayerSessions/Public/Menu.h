@@ -21,7 +21,12 @@ class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")), FString LobbyPath = FString(TEXT("/Game/ThirdPersonCPP/Maps/Lobby")));
+	void MenuSetup(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")));
+
+	// Pick the LobbyMap asset directly in the Menu Blueprint defaults.
+	// This is a soft reference: rename or move the map and Unreal auto-updates it.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Menu")
+	TSoftObjectPtr<UWorld> LobbyMap;
 
 protected:
 	virtual bool Initialize() override;
@@ -66,5 +71,4 @@ public:
 
 	int32 NumPublicConnections{4};
 	FString MatchType{TEXT("FreeForAll")};
-	FString PathToLobby{TEXT("")};
 };

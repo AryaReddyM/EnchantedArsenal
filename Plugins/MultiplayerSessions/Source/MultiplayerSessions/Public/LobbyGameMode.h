@@ -7,7 +7,7 @@
 #include "LobbyGameMode.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class MULTIPLAYERSESSIONS_API ALobbyGameMode : public AGameMode {
@@ -16,4 +16,17 @@ class MULTIPLAYERSESSIONS_API ALobbyGameMode : public AGameMode {
 public:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lobby")
+	int32 RequiredPlayersToStart = 2;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lobby")
+	FString MatchMapPath = TEXT("/Game/Maps/Gameplay/Map1");
+
+protected:
+	UFUNCTION()
+	void OnSessionStarted(bool bWasSuccessful);
+
+	void TravelToMatch();
+
+	bool bTravelInProgress = false;
 };

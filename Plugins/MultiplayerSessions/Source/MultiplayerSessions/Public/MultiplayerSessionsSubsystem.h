@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "Interfaces/OnlineIdentityInterface.h"
 
 #include "MultiplayerSessionsSubsystem.generated.h"
 
@@ -16,6 +17,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionsComplete, const T
 DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerOnJoinSessionComplete, EOnJoinSessionCompleteResult::Type Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnDestroySessionComplete, bool, bWasSuccessful);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnLoginComplete, bool, bWasSuccessful);
 
 /**
  * 
@@ -31,10 +33,16 @@ public:
 	// To handle session functionality. The Menu class will call these
 	//
 	void CreateSession(int32 NumPublicConnections, FString MatchType);
-	void FindSessions(int32 MaxSearchResults);
+	void FindSessions(int32 MaxSearchResults, FString MatchType = FString());
 	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
 	void DestroySession();
 	void StartSession();
+
+	UFUNCTION(BlueprintCallable, Category = "Multiplayer")
+	void Login();
+
+	UFUNCTION(BlueprintCallable, Category = "Multiplayer")
+	bool IsLoggedIn() const;
 
 	bool IsValidSessionInterface();
 
@@ -47,6 +55,9 @@ public:
 	FMultiplayerOnDestroySessionComplete MultiplayerOnDestroySessionComplete;
 	FMultiplayerOnStartSessionComplete MultiplayerOnStartSessionComplete;
 
+	UPROPERTY(BlueprintAssignable, Category = "Multiplayer")
+	FMultiplayerOnLoginComplete MultiplayerOnLoginComplete;
+
 protected:
 
 	//
@@ -58,9 +69,12 @@ protected:
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnStartSessionComplete(FName SessionName, bool bWasSuccessful);
+	void OnLoginComplete(int32 LocalUserNum, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error);
 
 public:
 	IOnlineSessionPtr SessionInterface;
+	IOnlineIdentityPtr IdentityInterface;
+	FDelegateHandle LoginCompleteDelegateHandle;
 	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
 	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 

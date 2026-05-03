@@ -24,55 +24,67 @@ bool ULobbyList::Initialize() {
 	return true;
 }
 
+void ULobbyList::NativeDestruct() {
+	if (UWorld* World = GetWorld()) {
+		World->GetTimerManager().ClearTimer(UpdateLobbyTimerHandle);
+	}
+	Super::NativeDestruct();
+}
+
 void ULobbyList::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful) {
-	UpdateLobbyList();
-	GetWorld()->GetTimerManager().SetTimer(UpdateLobbyTimerHandle, this, &ULobbyList::UpdateLobbyList, 1.0F, true);
+	RebuildList(SessionResults);
 
 	HideMenu.Broadcast();
 	SetVisibility(ESlateVisibility::Visible);
+
+	if (UWorld* World = GetWorld()) {
+		World->GetTimerManager().SetTimer(UpdateLobbyTimerHandle, this, &ULobbyList::RequestRefresh, 2.0F, false);
+	}
 }
 
-void ULobbyList::UpdateLobbyList() {
+void ULobbyList::RebuildList(const TArray<FOnlineSessionSearchResult>& SessionResults) {
+	if (!LobbyContainer) return;
+
 	LobbyContainer->ClearChildren();
 
-	for (auto Result : MultiplayerSessionsSubsystem->LastSessionSearch->SearchResults) {
-
-		if (LobbyName) {
-			LobbyNameRef = CreateWidget<ULobbyName>(GetWorld(), LobbyName);
-			if (LobbyNameRef) {
-				GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Blue, "LobbyNameRef");
-
-				LobbyNameRef->LobbyJoinButton->OnClicked.AddDynamic(this, &ULobbyList::JoinClickedSession);
-
-				Username = Result.Session.OwningUserName;
-
-				LobbyNameRef->UpdateLobby(Username);
-
-				LobbyContainer->AddChild(LobbyNameRef);
-			}
-			else {
-				GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Blue, "No LobbyNameRef");
-			}
+	if (!LobbyName) {
+		if (GEngine) {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Red, TEXT("LobbyList: LobbyName widget class not set"));
 		}
-		else {
-			GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Blue, "No LobbyName");
-		}
+		return;
+	}
+
+	for (const FOnlineSessionSearchResult& Result : SessionResults) {
+		ULobbyName* Row = CreateWidget<ULobbyName>(GetWorld(), LobbyName);
+		if (!Row) continue;
+
+		Row->Setup(Result, this);
+		LobbyContainer->AddChild(Row);
 	}
 }
 
-void ULobbyList::JoinClickedSession() {
-	for (auto Result : MultiplayerSessionsSubsystem->LastSessionSearch->SearchResults) {
-		if (LobbyNameRef->LobbyNameText->GetText().ToString() == Username + "'s Lobby") {
-			GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Green, "Joining Session");
-			MultiplayerSessionsSubsystem->JoinSession(Result);
-		}
-		else {
-			GEngine->AddOnScreenDebugMessage(-1, 15.0F, FColor::Red, "Join Failed");
-		}
+void ULobbyList::RequestRefresh() {
+	if (GetVisibility() != ESlateVisibility::Visible) return;
+	if (!MultiplayerSessionsSubsystem) return;
+
+	MultiplayerSessionsSubsystem->FindSessions(10000);
+}
+
+void ULobbyList::JoinSpecificSession(const FOnlineSessionSearchResult& Result) {
+	if (!MultiplayerSessionsSubsystem) return;
+
+	if (UWorld* World = GetWorld()) {
+		World->GetTimerManager().ClearTimer(UpdateLobbyTimerHandle);
 	}
+
+	MultiplayerSessionsSubsystem->JoinSession(Result);
 }
 
 void ULobbyList::BackButtonClicked() {
+	if (UWorld* World = GetWorld()) {
+		World->GetTimerManager().ClearTimer(UpdateLobbyTimerHandle);
+	}
+
 	ShowMenu.Broadcast();
 	SetVisibility(ESlateVisibility::Collapsed);
 }

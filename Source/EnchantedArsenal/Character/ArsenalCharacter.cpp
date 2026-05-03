@@ -137,11 +137,13 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 	if (IsAiming()) {
 		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(), AimCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
 		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(), AimCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
-		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation));
+		FVector CameraScale = FMath::VInterpTo(CameraComp->GetComponentScale(), AimCameraPosComp->GetComponentScale(), DeltaTime, ADSSpeed);
+		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation, CameraScale));
 	}
 	else {
 		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(), HipCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
 		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(), HipCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
+		FVector CameraScale = FMath::VInterpTo(CameraComp->GetComponentScale(), HipCameraPosComp->GetComponentScale(), DeltaTime, ADSSpeed);
 		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation));
 	}
 	
@@ -149,7 +151,7 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 	float Velocity = GetVelocity().Size();
 	float BaseSpread = 20.f;
 	float MovementMultiplier = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 600.f), FVector2D(0.f, 60.f), Velocity);
-    float ADSMultiplier = (IsAiming() && CombatComp->SpawnedWeapon->WeaponType != EWeaponType::EWT_Unarmed) ? 0.5f : 1.0f;
+	float ADSMultiplier = (IsAiming() && CombatComp && CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType != EWeaponType::EWT_Unarmed) ? 0.5f : 1.0f;
 
 	TargetVisualSpread = (BaseSpread + MovementMultiplier) * ADSMultiplier;
 
