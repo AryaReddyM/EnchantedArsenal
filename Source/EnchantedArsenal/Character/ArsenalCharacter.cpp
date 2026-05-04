@@ -19,6 +19,8 @@
 #include "Components/Image.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnchantedArsenal/Components/MagicComponent.h"
+#include "EnchantedArsenal/PlayerStart/TeamPlayerStart.h"
+#include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
 ////////////////////////////////////// Function Definitions //////////////////////////////////////
@@ -105,6 +107,12 @@ void AArsenalCharacter::BeginPlay() {
 		if (UHealthComponent* ActiveHealthComp = FindComponentByClass<UHealthComponent>()) {
 			ActiveHealthComp->SetHealthBar(FoundBar);
 		}
+	}
+	
+	// Initialize PlayerState
+	ArsenalPlayerState = GetPlayerState<AArsenalPlayerState>();
+	if (ArsenalPlayerState) {
+		OnPlayerStateInit();
 	}
 }
 
@@ -206,6 +214,14 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 	    	Left->SetRenderTranslation(FVector2D(-CurrentVisualSpread, 0.f));
 	    	Right->SetRenderTranslation(FVector2D(CurrentVisualSpread, 0.f));
 	    }
+	}
+}
+
+void AArsenalCharacter::PossessedBy(AController* NewController) {
+	Super::PossessedBy(NewController);
+	ArsenalPlayerState = GetPlayerState<AArsenalPlayerState>();
+	if (ArsenalPlayerState) {
+		OnPlayerStateInit();
 	}
 }
 
@@ -470,6 +486,54 @@ FHitResult AArsenalCharacter::TraceUnderCrosshairs() {
 	return TraceHitResult;
 }
 
+void AArsenalCharacter::SetTeamColor(ETeam Team) {
+	if (GetMesh() == nullptr) return;
+
+	switch (Team) {
+	case ETeam::ET_BlueTeam:
+		for (int i = 0; i < BlueMaterials.Num(); i++) {
+			GetMesh()->SetMaterial(i, BlueMaterials[i]);
+		}
+		BluePlayers++;
+		break;
+	case ETeam::ET_RedTeam:
+		for (int i = 0; i < RedMaterials.Num(); i++) {
+			GetMesh()->SetMaterial(i, RedMaterials[i]);
+		}
+		RedPlayers++;
+		break;
+	default:
+		for (int i = 0; i < NoMaterials.Num(); i++) {
+        	GetMesh()->SetMaterial(i, NoMaterials[i]);
+        }
+		break;
+	}
+}
+
+void AArsenalCharacter::SetSpawnPoint() {
+	if (HasAuthority() && ArsenalPlayerState->GetTeam() != ETeam::ET_NoTeam) {
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, ATeamPlayerStart::StaticClass(), PlayerStarts);
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		
+		for (AActor* Start : PlayerStarts) {
+			ATeamPlayerStart* TeamPlayerStart = Cast<ATeamPlayerStart>(Start);
+			if (TeamPlayerStart && TeamPlayerStart->Team == ArsenalPlayerState->GetTeam()) {
+				TeamPlayerStarts.Add(TeamPlayerStart);
+			}
+		}
+		if (TeamPlayerStarts.Num() > 0) {
+			ATeamPlayerStart* ChosenPlayerStart = TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)];
+			SetActorLocationAndRotation(ChosenPlayerStart->GetActorLocation(), ChosenPlayerStart->GetActorRotation());
+		}
+	}
+}
+
+void AArsenalCharacter::OnPlayerStateInit() {
+	SetTeamColor(ArsenalPlayerState->GetTeam());
+	SetSpawnPoint();
+}
+
 ////////////////////////////////////// Getters //////////////////////////////////////
 
 //////////////// GetWeapon ////////////////
@@ -498,4 +562,12 @@ bool AArsenalCharacter::IsShooting() {
 
 //////////////// OnRep_AttackType ////////////////
 void AArsenalCharacter::OnRep_AttackType() {
+}
+
+void AArsenalCharacter::OnRep_PlayerState() {
+	Super::OnRep_PlayerState();
+	ArsenalPlayerState = GetPlayerState<AArsenalPlayerState>();
+	if (ArsenalPlayerState) {
+		OnPlayerStateInit();
+	}
 }

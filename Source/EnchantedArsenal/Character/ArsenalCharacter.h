@@ -4,8 +4,6 @@
 #include "GameFramework/Character.h"
 #include "ArsenalCharacter.generated.h"
 
-class UImage;
-
 UENUM(BlueprintType)
 enum class EAttackType : uint8 {
 	EAT_Initial UMETA(DisplayName = "Initial Type"),
@@ -33,6 +31,9 @@ class ASpell;
 class USpellData;
 enum class EWeaponType : uint8;
 enum class ESpellType : uint8;
+class AArsenalPlayerState;
+class UImage;
+enum class ETeam : uint8;
 
 UCLASS()
 class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter {
@@ -50,13 +51,13 @@ public:
 	// Components Are Initialized and Ready to Use
 	virtual void PostInitializeComponents() override;
 	
-protected:
 	// When Game Starts
 	virtual void BeginPlay() override;
 
-public:	
 	// Every Game Tick
 	virtual void Tick(float DeltaTime) override;
+	
+	virtual void PossessedBy(AController* NewController) override;
 
 	// Player Input Function
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -93,6 +94,11 @@ public:
 	void ServerSetAttackType(EAttackType NewType);
 	
 	FHitResult TraceUnderCrosshairs();
+	
+	void SetTeamColor(ETeam Team);
+	void SetSpawnPoint();
+	
+	void OnPlayerStateInit();
 
 	// Getters
 	AWeapon* GetWeapon();
@@ -245,4 +251,22 @@ public:
 	float TargetVisualSpread;
 	UPROPERTY(EditAnywhere, Category = "Crosshair")
 	float InterpSpeed = 15.f;
+	
+	// Teams
+	UPROPERTY(EditAnywhere, Category = "Teams")
+	TArray<UMaterialInterface*> BlueMaterials;
+
+	UPROPERTY(EditAnywhere, Category = "Teams")
+	TArray<UMaterialInterface*> RedMaterials;
+
+	UPROPERTY(EditAnywhere, Category = "Teams")
+	TArray<UMaterialInterface*> NoMaterials;
+
+	int BluePlayers = 0;
+	int RedPlayers = 0;
+	
+	UPROPERTY()
+	AArsenalPlayerState* ArsenalPlayerState;
+
+	virtual void OnRep_PlayerState() override;
 };
