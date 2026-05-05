@@ -5,6 +5,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "EnchantedArsenal/Components/MagicComponent.h"
+#include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
+#include "EnchantedArsenal/Magic/SpellData.h"
 
 ASpell::ASpell() {
 	PrimaryActorTick.bCanEverTick = false;
@@ -23,8 +25,9 @@ ASpell::ASpell() {
 	Collision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	
 	Collision->SetNotifyRigidBodyCollision(true);
+	Collision->SetGenerateOverlapEvents(true);
 	Collision->OnComponentHit.AddDynamic(this, &ASpell::OnHit);
-	Collision->OnComponentBeginOverlap.AddDynamic(this, &ASpell::OnOverlap);
+	Collision->OnComponentBeginOverlap.AddDynamic(this, &ASpell::OnBeginOverlap);
 
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComp->SetupAttachment(Collision);
@@ -103,9 +106,33 @@ void ASpell::LaunchInDirection(const FVector& Dir) {
 	}
 }
 
-void ASpell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {}
+void ASpell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
+	HandleSpellMerge(OtherActor);
+}
 
-void ASpell::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
+void ASpell::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
+	HandleSpellMerge(OtherActor);
+}
+
+void ASpell::HandleSpellMerge(AActor* OtherActor) {
+	if (!HasAuthority() || !OtherActor) return;
+	if (OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
+
+	ASpell* OtherSpell = Cast<ASpell>(OtherActor);
+	if (!OtherSpell || !OtherSpell->Data) return;
+
+	if (!bIsHeld || OtherSpell->bIsHeld) return;
+
+	// Don't combo with hostile spells — the flying spell should pass through and damage the caster.
+	if (AArsenalPlayerState::IsHostile(GetInstigator(), OtherSpell->GetInstigator())) return;
+
+	SpellTags.AppendTags(OtherSpell->Data->ComboGrantTags);
+	OnRep_SpellTags();
+	OtherSpell->Destroy();
+}
+
+bool ASpell::IsEnemy(AActor* OtherActor) {
+	return AArsenalPlayerState::IsHostile(GetInstigator(), OtherActor);
 }
 
 void ASpell::OnRep_Data() {

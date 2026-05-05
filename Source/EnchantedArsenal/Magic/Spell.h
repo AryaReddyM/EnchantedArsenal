@@ -27,8 +27,13 @@ public:
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	UFUNCTION()
-	virtual void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	void HandleSpellMerge(AActor* OtherActor);
+
+	UFUNCTION(BlueprintCallable, Category = "Magic")
+	bool IsEnemy(AActor* OtherActor);
+	
 	UPROPERTY(VisibleAnywhere) 
 	USphereComponent* Collision;
 	UPROPERTY(VisibleAnywhere) 

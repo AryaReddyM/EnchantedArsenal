@@ -16,32 +16,15 @@ void ABoulder::Tick(float DeltaTime) {
 
 void ABoulder::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
-	
-	if (bIsHeld || !OtherActor || OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
-	
-	if (HasAuthority()) {
+
+	if (!HasAuthority() || !OtherActor) return;
+	if (OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
+	if (Cast<ASpell>(OtherActor)) return;
+
+	if (IsEnemy(OtherActor)) {
 		if (UHealthComponent* HealthComp = OtherActor->FindComponentByClass<UHealthComponent>()) {
 			HealthComp->ApplyDamage(Data ? Data->GetDamage(SpellTags) : 0.0f);
-
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Health: ") + FString::SanitizeFloat(HealthComp->CurrentHealth));
 		}
 		Destroy();
-	}
-}
-
-void ABoulder::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-	Super::OnOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-	
-	if (!OtherActor || OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
-	
-	ASpell* OtherSpell = Cast<ASpell>(OtherActor);
-	if (!OtherSpell) {
-		return;
-	}
-	
-	if (HasAuthority() && OtherSpell->Data) {
-		SpellTags.AppendTags(OtherSpell->Data->ComboGrantTags);
-		OnRep_SpellTags();
-		OtherSpell->Destroy();
 	}
 }

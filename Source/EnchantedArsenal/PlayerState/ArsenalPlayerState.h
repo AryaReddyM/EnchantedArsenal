@@ -34,4 +34,6 @@ private:
 public:
 	FORCEINLINE ETeam GetTeam() const { return Team; }
 	void SetTeam(ETeam TeamToSet);
+
+	static bool IsHostile(AActor* Instigator, AActor* Other);
 };

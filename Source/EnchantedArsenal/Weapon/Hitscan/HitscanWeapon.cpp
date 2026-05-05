@@ -9,7 +9,8 @@
 #include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "EnchantedArsenal/Components/CombatComponent.h" 
+#include "EnchantedArsenal/Components/CombatComponent.h"
+#include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
 #include "Components/BoxComponent.h"
 
 void AHitscanWeapon::Shoot() {
@@ -100,7 +101,7 @@ void AHitscanWeapon::ServerProcessShot(bool bHitSomething, const FVector& Impact
         }
     }
 
-    if (BestTarget) {
+    if (BestTarget && AArsenalPlayerState::IsHostile(InstigatorPawn, BestTarget)) {
         if (UHealthComponent* HealthComp = BestTarget->FindComponentByClass<UHealthComponent>()) {
             if (CheckForHeadshot(BestTarget, ImpactPoint)) {
                 HealthComp->ApplyDamage(HeadshotDamage);
