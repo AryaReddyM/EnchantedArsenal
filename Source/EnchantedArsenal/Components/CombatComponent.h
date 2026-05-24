@@ -31,7 +31,7 @@ public:
 	void FireOneShot();
 
 	UFUNCTION()
-	void HandleAmmoChanged(int32 NewAmmo, int32 MagSize);
+	void HandleAmmoChanged(int32 NewAmmo, int32 MaxAmmo);
 	void ResetAmmo();
 
 	void PlayShootMontage();

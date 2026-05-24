@@ -3,6 +3,8 @@
 #include "Net/UnrealNetwork.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
 #include "TimerManager.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 
 UCombatComponent::UCombatComponent() {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -107,8 +109,14 @@ void UCombatComponent::FireOneShot() {
 	LastShootTime = GetWorld()->GetTimeSeconds();
 }
 
-void UCombatComponent::HandleAmmoChanged(int32 NewAmmo, int32 MagSize) {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Ammo: %d/%d"), NewAmmo, MagSize));
+void UCombatComponent::HandleAmmoChanged(int32 NewAmmo, int32 MaxAmmo) {
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Ammo: %d/%d"), NewAmmo, MaxAmmo));
+
+	if (!Character || !Character->IsLocallyControlled() || !Character->HUD) return;
+
+	if (UTextBlock* AmmoText = Cast<UTextBlock>(Character->HUD->GetWidgetFromName("AmmoText"))) {
+		AmmoText->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), NewAmmo, MaxAmmo)));
+	}
 }
 
 void UCombatComponent::ResetAmmo() {
@@ -120,7 +128,7 @@ void UCombatComponent::ResetAmmo() {
 }
 
 void UCombatComponent::PlayShootMontage() {
-	if (!Character || !SpawnedWeapon) return;
+	if (!Character || !SpawnedWeapon || !SpawnedWeapon->ShootMontage) return;
 	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
 	if (!AnimInstance) return;
 
@@ -133,7 +141,7 @@ void UCombatComponent::PlayShootMontage() {
 }
 
 void UCombatComponent::PlayEquipMontage() {
-	if (!Character || !SpawnedWeapon) return;
+	if (!Character || !SpawnedWeapon || !SpawnedWeapon->EquipMontage) return;
 	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
 	if (AnimInstance && !AnimInstance->Montage_IsPlaying(SpawnedWeapon->EquipMontage)) {
 		AnimInstance->Montage_Play(SpawnedWeapon->EquipMontage);
@@ -141,6 +149,7 @@ void UCombatComponent::PlayEquipMontage() {
 }
 
 float UCombatComponent::GetEquipMontageLength() {
+	if (!SpawnedWeapon || !SpawnedWeapon->EquipMontage) return 0.01f;
 	return SpawnedWeapon->EquipMontage->GetPlayLength();
 }
 

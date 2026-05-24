@@ -240,13 +240,13 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		// Jump
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 
-		// Weapon equips
+		// Weapon Equips
 		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Rifle);
 		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_SMG);
 		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Shotgun);
 		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
 
-		// Spell equips
+		// Spell Equips
 		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
 		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
 		
@@ -321,6 +321,10 @@ void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 			GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
 		}
 		bIsReloading = false;
+	}
+	
+	if (UTextBlock* AmmoText = Cast<UTextBlock>(HUD->GetWidgetFromName("AmmoText"))) {
+		AmmoText->SetText(FText::FromString(""));
 	}
 
 	if (HasAuthority()) {
