@@ -1,29 +1,20 @@
 #include "CombatComponent.h"
-
 #include "EnchantedArsenal/Character/ArsenalCharacter.h"
 #include "Net/UnrealNetwork.h"
-#include "Kismet/GameplayStatics.h"
 #include "EnchantedArsenal/Weapon/Weapon.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h"
 
 UCombatComponent::UCombatComponent() {
-	PrimaryComponentTick.bCanEverTick = true;
-}
-
-void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(UCombatComponent, SpawnedWeapon);
-	DOREPLIFETIME(UCombatComponent, bShooting);
-	DOREPLIFETIME(UCombatComponent, SemiShotCounter);
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UCombatComponent::BeginPlay() {
 	Super::BeginPlay();
 }
 
-void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UCombatComponent, SpawnedWeapon);
 }
 
 void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
@@ -33,171 +24,140 @@ void UCombatComponent::EquipWeapon(EWeaponType WeaponType) {
 
 	TSubclassOf<AWeapon> WeaponClass = nullptr;
 	switch (WeaponType) {
-	case EWeaponType::EWT_Rifle:   WeaponClass = Rifle;   break;
-	case EWeaponType::EWT_Shotgun: WeaponClass = Shotgun; break;
-	case EWeaponType::EWT_SMG:     WeaponClass = SMG;     break;
-	case EWeaponType::EWT_Pistol:  WeaponClass = Pistol;  break;
+	case EWeaponType::EWT_Rifle: WeaponClass = Rifle;
+		break;
+	case EWeaponType::EWT_Shotgun: WeaponClass = Shotgun;
+		break;
+	case EWeaponType::EWT_SMG: WeaponClass = SMG;
+		break;
+	case EWeaponType::EWT_Pistol: WeaponClass = Pistol;
+		break;
 	default: return;
 	}
+
 	if (!WeaponClass) return;
 
 	FActorSpawnParameters Params;
 	Params.Owner = Character;
 	Params.Instigator = Character;
+	SpawnedWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass, FTransform::Identity, Params);
 
-	AWeapon* NewWeapon = GetWorld()->SpawnActor<AWeapon>(WeaponClass, FTransform::Identity, Params);
-	if (!NewWeapon) return;
+	if (SpawnedWeapon) {
+		const FName HandSocket(TEXT("RightHandSocket"));
+		SpawnedWeapon->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,
+										 HandSocket);
 
-	USkeletalMeshComponent* CharMesh = Character->GetMesh();
-	if (!CharMesh || !NewWeapon->GripPoint) {
-		NewWeapon->Destroy();
-		return;
+		if (SpawnedWeapon->GripPoint) {
+			SpawnedWeapon->SetActorRelativeTransform(SpawnedWeapon->GripPoint->GetRelativeTransform().Inverse());
+		}
+
+		if (int* CachedAmmo = AmmoReserve.Find(WeaponType)) {
+			SpawnedWeapon->CurrentAmmo = *CachedAmmo;
+		}
+
+		PlayEquipMontage();
+		SpawnedWeapon->OnAmmoChanged.AddDynamic(this, &UCombatComponent::HandleAmmoChanged);
+		HandleAmmoChanged(SpawnedWeapon->CurrentAmmo, SpawnedWeapon->MagSize);
 	}
-
-	const FName HandSocket(TEXT("RightHandSocket"));
-	NewWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::KeepRelativeTransform, HandSocket);
-
-	const FTransform GripRelativeTransform = NewWeapon->GripPoint->GetRelativeTransform();
-	NewWeapon->SetActorRelativeTransform(GripRelativeTransform.Inverse());
-
-	SpawnedWeapon = NewWeapon;
-
-	PlayEquipMontage();
 }
 
 void UCombatComponent::UnequipWeapon() {
 	if (!Character || !Character->HasAuthority()) return;
 
 	if (SpawnedWeapon) {
+		AmmoReserve.Add(SpawnedWeapon->WeaponType, SpawnedWeapon->CurrentAmmo);
 		SpawnedWeapon->Destroy();
 		SpawnedWeapon = nullptr;
 	}
 
-	bShooting = false;
-	SemiShotCounter = 0;
+	GetWorld()->GetTimerManager().ClearTimer(ShootTimer);
 }
 
 void UCombatComponent::Shoot(bool bTriggered) {
 	if (!SpawnedWeapon) return;
 
-	bShooting = bTriggered;
-	ServerShoot(bTriggered);
-}
+	if (bTriggered) {
+		GetWorld()->GetTimerManager().SetTimer(ShootTimer, FTimerDelegate::CreateLambda([this]() {
+			if (!SpawnedWeapon || !Character) return;
 
-void UCombatComponent::ServerShoot_Implementation(bool bTriggered) {
-	MultiShoot(bTriggered);
+			if (Character->IsLocallyControlled()) {
+				PlayShootMontage();
+			}
 
-	bShooting = bTriggered;
-}
+			SpawnedWeapon->Shoot();
 
-void UCombatComponent::MultiShoot_Implementation(bool bTriggered) {
-	if (!SpawnedWeapon || !Character) return;
-
-	if (Character->GetMesh()->GetAnimInstance()->Montage_IsPlaying(SpawnedWeapon->EquipMontage) || !bTriggered) return;
-
-	if (bIsRecentlyEquipped) {
-		const float CurrentTime = GetWorld()->GetTimeSeconds();
-		const float EquipDelay = SpawnedWeapon ? SpawnedWeapon->EquipDelay : 0.f;
-
-		if (CurrentTime - LastEquipTime < EquipDelay) return;
-
-		bIsRecentlyEquipped = false;
-	}
-
-	if (SpawnedWeapon->FireType == EFireType::EFT_Auto) {
-		PlayShootMontage();
-	}
-
-	SpawnedWeapon->Shoot();
-}
-
-void UCombatComponent::SetSemiCounter(int Counter) {
-	if (!SpawnedWeapon) return;
-
-	if (GetOwnerRole() < ROLE_Authority) {
-		ServerSetSemiCounter(Counter);
+			if (SpawnedWeapon->FireType == EFireType::EFT_SemiAuto) {
+				GetWorld()->GetTimerManager().ClearTimer(ShootTimer);
+			}
+		}), SpawnedWeapon->ShootRate, true, 0.0f);
 	}
 	else {
-		SemiShotCounter = Counter;
-		OnRep_SemiShotCounter();
+		GetWorld()->GetTimerManager().ClearTimer(ShootTimer);
 	}
 }
 
-void UCombatComponent::ServerSetSemiCounter_Implementation(int32 NewCounter) {
-	SemiShotCounter = NewCounter;
-	OnRep_SemiShotCounter();
+void UCombatComponent::HandleAmmoChanged(int32 NewAmmo, int32 MagSize) {
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Ammo: %d/%d"), NewAmmo, MagSize));
 }
 
-void UCombatComponent::ResetSemiCounter() {
-	if (GetOwnerRole() < ROLE_Authority) {
-		ServerResetSemiCounter();
-	}
-	else {
-		MulticastResetSemiCounter();
+void UCombatComponent::ResetAmmo() {
+	for (TTuple<EWeaponType, int>& KV : AmmoReserve) {
+		KV.Value = GetWeaponClass(KV.Key)->MagSize;
 	}
 }
 
 void UCombatComponent::PlayShootMontage() {
 	if (!Character || !SpawnedWeapon) return;
-
-	UAnimInstance* AnimInstance = Character->GetMesh() ? Character->GetMesh()->GetAnimInstance() : nullptr;
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
 	if (!AnimInstance) return;
 
 	if (SpawnedWeapon->FireType == EFireType::EFT_SemiAuto) {
 		AnimInstance->Montage_Play(SpawnedWeapon->ShootMontage);
-		return;
 	}
-
-	if (!AnimInstance->Montage_IsPlaying(SpawnedWeapon->ShootMontage)) {
+	else if (!AnimInstance->Montage_IsPlaying(SpawnedWeapon->ShootMontage)) {
 		AnimInstance->Montage_Play(SpawnedWeapon->ShootMontage);
 	}
 }
 
 void UCombatComponent::PlayEquipMontage() {
 	if (!Character || !SpawnedWeapon) return;
-
-	UAnimInstance* AnimInstance = Character->GetMesh() ? Character->GetMesh()->GetAnimInstance() : nullptr;
-	if (!AnimInstance) return;
-
-	if (!AnimInstance->Montage_IsPlaying(SpawnedWeapon->EquipMontage)) {
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
+	if (AnimInstance && !AnimInstance->Montage_IsPlaying(SpawnedWeapon->EquipMontage)) {
 		AnimInstance->Montage_Play(SpawnedWeapon->EquipMontage);
 	}
 }
 
-void UCombatComponent::ServerResetSemiCounter_Implementation() {
-	MulticastResetSemiCounter();
+float UCombatComponent::GetEquipMontageLength() {
+	return SpawnedWeapon->EquipMontage->GetPlayLength();
 }
 
-bool UCombatComponent::ServerResetSemiCounter_Validate() {
-	return true;
-}
-
-void UCombatComponent::MulticastResetSemiCounter_Implementation() {
-	SemiShotCounter = 0;
+AWeapon* UCombatComponent::GetWeaponClass(EWeaponType Type) const {
+	switch (Type) {
+	case EWeaponType::EWT_Rifle:   
+		return Rifle->GetDefaultObject<AWeapon>();
+	case EWeaponType::EWT_Shotgun: 
+		return Shotgun->GetDefaultObject<AWeapon>();
+	case EWeaponType::EWT_SMG:     
+		return SMG->GetDefaultObject<AWeapon>();
+	case EWeaponType::EWT_Pistol:  
+		return Pistol->GetDefaultObject<AWeapon>();
+	default:                       
+		return nullptr;
+	}
 }
 
 void UCombatComponent::OnRep_SpawnedWeapon() {
-	if (!Character) return;
+	if (!Character || !SpawnedWeapon) return;
 
-	if (!SpawnedWeapon) {
-		bShooting = false;
-		SemiShotCounter = 0;
-		return;
-	}
-
-	USkeletalMeshComponent* CharMesh = Character->GetMesh();
-	if (!CharMesh) return;
+	SpawnedWeapon->OnAmmoChanged.AddDynamic(this, &UCombatComponent::HandleAmmoChanged);
+	HandleAmmoChanged(SpawnedWeapon->CurrentAmmo, SpawnedWeapon->MagSize);
 
 	const FName HandSocket(TEXT("RightHandSocket"));
-	SpawnedWeapon->AttachToComponent(CharMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, HandSocket);
+	SpawnedWeapon->AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+	                                 HandSocket);
 
 	if (SpawnedWeapon->GripPoint) {
-		const FTransform GripRel = SpawnedWeapon->GripPoint->GetRelativeTransform();
-		SpawnedWeapon->SetActorRelativeTransform(GripRel.Inverse());
+		SpawnedWeapon->SetActorRelativeTransform(SpawnedWeapon->GripPoint->GetRelativeTransform().Inverse());
 	}
-
 	PlayEquipMontage();
-}
-
-void UCombatComponent::OnRep_SemiShotCounter() {
 }

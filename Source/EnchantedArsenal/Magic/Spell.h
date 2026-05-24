@@ -54,6 +54,6 @@ public:
 	UFUNCTION()
 	void OnRep_SpellTags();
 	
-	UPROPERTY(Replicated) 
+	UPROPERTY(Replicated)
 	bool bIsHeld = false;
 };

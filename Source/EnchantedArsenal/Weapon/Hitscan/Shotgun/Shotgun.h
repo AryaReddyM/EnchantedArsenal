@@ -11,6 +11,11 @@ class ENCHANTEDARSENAL_API AShotgun : public AHitscanWeapon {
 public:
 	virtual void Shoot() override;
 
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunFire(FVector_NetQuantize CameraLoc, FVector_NetQuantize CrosshairImpact);
+
+	void AuthoritativeShotgunFire(const FVector& CameraLoc, const FVector& CrosshairImpact);
+
 	UPROPERTY(EditAnywhere)
 	float Pellets;
 

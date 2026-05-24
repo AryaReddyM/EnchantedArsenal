@@ -1,76 +1,49 @@
 #include "HealthComponent.h"
-
-#include "Blueprint/UserWidget.h"
 #include "Components/ProgressBar.h"
 #include "Net/UnrealNetwork.h"
-#include "EnchantedArsenal/Character/ArsenalCharacter.h"
 
-UHealthComponent::UHealthComponent() {
-	PrimaryComponentTick.bCanEverTick = false;
-	SetIsReplicatedByDefault(true);
-
-	CurrentHealth = MaxHealth;
+void UHealthComponent::BeginPlay() {
+	Super::BeginPlay();
+	
+	if (GetOwner() && GetOwner()->HasAuthority()) {
+		ResetHealth();
+	}
 }
 
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+	
 	DOREPLIFETIME(UHealthComponent, CurrentHealth);
-}
-
-void UHealthComponent::BeginPlay() {
-	Super::BeginPlay();
-
-	CurrentHealth = MaxHealth;
-}
-
-
-void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
 void UHealthComponent::SetHealthBar(UProgressBar* InHealthBar) {
 	HealthBar = InHealthBar;
-
 	if (HealthBar) {
 		HealthBar->SetPercent(CurrentHealth / MaxHealth);
 	}
 }
 
-void UHealthComponent::EnsureHealthBar() {
-	if (HealthBar) return;
-
-	AArsenalCharacter* Character = Cast<AArsenalCharacter>(GetOwner());
-	if (!Character || !Character->IsLocallyControlled() || !Character->HUD) return;
-
-	HealthBar = Cast<UProgressBar>(Character->HUD->GetWidgetFromName("HealthBar"));
+void UHealthComponent::ResetHealth() {
+	CurrentHealth = MaxHealth;
+	
+	OnRep_CurrentHealth();
 }
 
 void UHealthComponent::OnRep_CurrentHealth() {
-	EnsureHealthBar();
-
-	if (HealthBar) {
+	if (HealthBar)
+	{
 		HealthBar->SetPercent(CurrentHealth / MaxHealth);
 	}
 }
 
-void UHealthComponent::ApplyDamage(float Damage) {
+void UHealthComponent::ApplyDamage(float Damage, AActor* Damager) {
 	if (!GetOwner() || !GetOwner()->HasAuthority()) return;
 
 	CurrentHealth = FMath::Max(0.f, CurrentHealth - Damage);
 
-	EnsureHealthBar();
-
-	if (HealthBar) {
-		HealthBar->SetPercent(CurrentHealth / MaxHealth);
-	}
+	OnRep_CurrentHealth();
 
 	if (CurrentHealth <= 0) {
-		Die();
+		OnDeath.Broadcast(Damager);
 	}
 }
-
-void UHealthComponent::Die() {
-	OnDeath.Broadcast();
-}
-

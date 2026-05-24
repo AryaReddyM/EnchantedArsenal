@@ -76,13 +76,15 @@ public:
 
 	void Aim();
 	void AimReleased();
+	
 	void Shoot();
-	void ShootStarted();
 	void ShootReleased();
 
 	// Utility Functions
 	UFUNCTION()
-	void HandleDeath();
+	void HandleDeath(AActor* Damager);
+	
+	void ResetPlayer(APlayerController* PC, APawn* Spectator);
 
 	void AddRecoil(float Min, float Max);
 
@@ -269,4 +271,13 @@ public:
 	AArsenalPlayerState* ArsenalPlayerState;
 
 	virtual void OnRep_PlayerState() override;
+	
+	// Equip Handling
+	bool bIsEquipping = false;
+	float EquipDelay = 2.0f;
+	FTimerHandle EquipTimerHandle;
+	
+	// Death
+	FTimerHandle DeathTimer;
+	float DeathDelay = 3.0f;
 };

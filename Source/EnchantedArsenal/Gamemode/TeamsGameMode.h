@@ -15,6 +15,7 @@ public:
 
 	virtual void Logout(AController* Exiting) override;
 	
-protected:
 	virtual void HandleMatchHasStarted() override;
+	
+	void HandleScore(AActor* Killer);
 };

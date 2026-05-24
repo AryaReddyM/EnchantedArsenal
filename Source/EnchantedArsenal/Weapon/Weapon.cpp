@@ -24,10 +24,15 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 
 	DOREPLIFETIME(AWeapon, WeaponType);
 	DOREPLIFETIME(AWeapon, FireType);
+	DOREPLIFETIME(AWeapon, CurrentAmmo);
 }
 
 void AWeapon::BeginPlay() {
 	Super::BeginPlay();
+	
+	if (HasAuthority()) {
+		CurrentAmmo = MagSize;
+	}
 }
 
 void AWeapon::Tick(float DeltaTime) {
@@ -55,4 +60,18 @@ void AWeapon::OnRep_WeaponType() {
 }
 
 void AWeapon::OnRep_FireType() {
+}
+
+void AWeapon::OnRep_CurrentAmmo() {
+	OnAmmoChanged.Broadcast(CurrentAmmo, MagSize);
+}
+
+bool AWeapon::TryConsumeAmmo(int AmmoAmount) {
+	if (CurrentAmmo <= 0) return false;
+
+	if (HasAuthority()) {
+		CurrentAmmo -= AmmoAmount;
+		OnAmmoChanged.Broadcast(CurrentAmmo, MagSize);
+	}
+	return true;
 }

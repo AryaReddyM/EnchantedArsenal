@@ -1,4 +1,6 @@
 #include "TeamsGameMode.h"
+
+#include "EnchantedArsenal/Character/ArsenalCharacter.h"
 #include "EnchantedArsenal/GameState/ArsenalGameState.h"
 #include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
 #include "Kismet/GameplayStatics.h"
@@ -30,6 +32,8 @@ void ATeamsGameMode::GenericPlayerInitialization(AController* Controller) {
 }
 
 void ATeamsGameMode::Logout(AController* Exiting) {
+	Super::Logout(Exiting);
+	
 	AArsenalGameState* ArsenalGameState = Cast<AArsenalGameState>(UGameplayStatics::GetGameState(this));
 	AArsenalPlayerState* ArsenalPlayerState = Exiting->GetPlayerState<AArsenalPlayerState>();
 
@@ -47,7 +51,7 @@ void ATeamsGameMode::Logout(AController* Exiting) {
 
 void ATeamsGameMode::HandleMatchHasStarted() {
 	Super::HandleMatchHasStarted();
-
+	
 	AArsenalGameState* ArsenalGameState = Cast<AArsenalGameState>(UGameplayStatics::GetGameState(this));
 
 	if (ArsenalGameState) {
@@ -63,6 +67,20 @@ void ATeamsGameMode::HandleMatchHasStarted() {
 					ArsenalGameState->RedTeam.AddUnique(PlayerState);
 					PlayerState->SetTeam(ETeam::ET_RedTeam);
 				}
+			}
+		}
+	}
+}
+
+void ATeamsGameMode::HandleScore(AActor* Killer) {
+	if (!Killer) return;
+	
+	if (AArsenalCharacter* Character = Cast<AArsenalCharacter>(Killer)) {
+		if (AArsenalPlayerState* PS = Cast<AArsenalPlayerState>(Character->GetPlayerState())) {
+			ETeam Team = PS->GetTeam();
+			
+			if (AArsenalGameState* GS = Cast<AArsenalGameState>(UGameplayStatics::GetGameState(this))) {
+				GS->SetTeamScore(Team, GS->GetTeamScore(Team) + 1);
 			}
 		}
 	}

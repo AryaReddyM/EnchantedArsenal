@@ -17,14 +17,18 @@
 #include "EnchantedArsenal/Components/CombatComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnchantedArsenal/Components/MagicComponent.h"
+#include "EnchantedArsenal/Gamemode/TeamsGameMode.h"
 #include "EnchantedArsenal/PlayerStart/TeamPlayerStart.h"
 #include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
+#include "GameFramework/SpectatorPawn.h"
 #include "Kismet/GameplayStatics.h"
 
 ////////////////////////////////////// Function Definitions //////////////////////////////////////
 
+class UTextBlock;
 //////////////// Constructor ////////////////
 AArsenalCharacter::AArsenalCharacter() {
 	// Enables Ticking
@@ -41,13 +45,13 @@ AArsenalCharacter::AArsenalCharacter() {
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera Component"));
 	CameraComp->SetupAttachment(SpringArmComp);
-	
+
 	HipCameraPosComp = CreateDefaultSubobject<UArrowComponent>(TEXT("Hip Camera Position Component"));
 	HipCameraPosComp->SetupAttachment(SpringArmComp);
-	
+
 	AimCameraPosComp = CreateDefaultSubobject<UArrowComponent>(TEXT("Aim Camera Position Component"));
 	AimCameraPosComp->SetupAttachment(GetMesh(), "head");
-	
+
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 	CombatComp->SetIsReplicated(true);
 
@@ -88,7 +92,7 @@ void AArsenalCharacter::BeginPlay() {
 	// Add the Enhanced Input mapping context for the local player
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-		        ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
+			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
@@ -98,17 +102,24 @@ void AArsenalCharacter::BeginPlay() {
 
 	// Adds HandleDeath Function to OnDeath Delegate in HealthComponent
 	HealthComp->OnDeath.AddDynamic(this, &AArsenalCharacter::HandleDeath);
-	
+
 	// Create HUD
 	if (IsLocallyControlled() && HUD) {
 		HUD->AddToViewport();
 
-		UProgressBar* FoundBar = Cast<UProgressBar>(HUD->GetWidgetFromName("HealthBar"));
-		if (UHealthComponent* ActiveHealthComp = FindComponentByClass<UHealthComponent>()) {
-			ActiveHealthComp->SetHealthBar(FoundBar);
+		if (UProgressBar* FoundBar = Cast<UProgressBar>(HUD->GetWidgetFromName("HealthBar"))) {
+			HealthComp->SetHealthBar(FoundBar);
+		}
+		
+		if (UTextBlock* BlueText = Cast<UTextBlock>(HUD->GetWidgetFromName("BlueScoreText"))) {
+			BlueText->SetText(FText::Format(FText::FromString("Blue Score: {0}"), 0));
+		}
+    
+		if (UTextBlock* RedText = Cast<UTextBlock>(HUD->GetWidgetFromName("RedScoreText"))) {
+			RedText->SetText(FText::Format(FText::FromString("Red Score: {0}"), 0));
 		}
 	}
-	
+
 	// Initialize PlayerState
 	ArsenalPlayerState = GetPlayerState<AArsenalPlayerState>();
 	if (ArsenalPlayerState) {
@@ -132,7 +143,7 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 
 	CurrentRecoilPitch = NewRecoilPitch;
 	CurrentRecoilYaw = NewRecoilYaw;
-	
+
 	if (FMath::IsNearlyEqual(CurrentRecoilPitch, TargetRecoilPitch, 0.01f)) {
 		CurrentRecoilPitch = TargetRecoilPitch = 0.f;
 	}
@@ -143,77 +154,63 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 
 	// ADS Smoothing
 	if (IsAiming()) {
-		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(), AimCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
-		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(), AimCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
-		FVector CameraScale = FMath::VInterpTo(CameraComp->GetComponentScale(), AimCameraPosComp->GetComponentScale(), DeltaTime, ADSSpeed);
+		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(),
+		                                          AimCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
+		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(),
+		                                           AimCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
+		FVector CameraScale = FMath::VInterpTo(CameraComp->GetComponentScale(), AimCameraPosComp->GetComponentScale(),
+		                                       DeltaTime, ADSSpeed);
 		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation, CameraScale));
 	}
 	else {
-		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(), HipCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
-		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(), HipCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
-		FVector CameraScale = FMath::VInterpTo(CameraComp->GetComponentScale(), HipCameraPosComp->GetComponentScale(), DeltaTime, ADSSpeed);
+		FVector CameraLocation = FMath::VInterpTo(CameraComp->GetComponentLocation(),
+		                                          HipCameraPosComp->GetComponentLocation(), DeltaTime, ADSSpeed);
+		FRotator CameraRotation = FMath::RInterpTo(CameraComp->GetComponentRotation(),
+		                                           HipCameraPosComp->GetComponentRotation(), DeltaTime, ADSSpeed);
+		FVector CameraScale = FMath::VInterpTo(CameraComp->GetComponentScale(), HipCameraPosComp->GetComponentScale(),
+		                                       DeltaTime, ADSSpeed);
 		CameraComp->SetWorldTransform(FTransform(CameraRotation.Quaternion(), CameraLocation));
 	}
-	
+
 	// Dynamic Crosshair
 	float Velocity = GetVelocity().Size();
 	float BaseSpread = 20.f;
 	float MovementMultiplier = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 600.f), FVector2D(0.f, 60.f), Velocity);
-	float ADSMultiplier = (IsAiming() && CombatComp && CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType != EWeaponType::EWT_Unarmed) ? 0.5f : 1.0f;
+	float ADSMultiplier = (IsAiming() && CombatComp && CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon-> WeaponType != EWeaponType::EWT_Unarmed) ? 0.5f : 1.0f;
 
 	TargetVisualSpread = (BaseSpread + MovementMultiplier) * ADSMultiplier;
 
 	CurrentVisualSpread = FMath::FInterpTo(CurrentVisualSpread, TargetVisualSpread, DeltaTime, InterpSpeed);
 
 	if (HUD) {
-		float WeaponBaseSpread = 15.f;
-		float MovementEffect = 5.f;
-		float InterpSpeedForWeapon = 15.f;
+		float WeaponBaseSpread = 15.0f;
+		float MovementEffect = 5.0f;
+		float InterpSpeedForWeapon = 15.0f;
 
 		if (CombatComp && CombatComp->SpawnedWeapon) {
-			switch (CombatComp->SpawnedWeapon->WeaponType) {
-			case EWeaponType::EWT_Pistol:
-				WeaponBaseSpread = 15.f;
-				MovementEffect = 10.f;
-				break;
-
-			case EWeaponType::EWT_Rifle:
-				WeaponBaseSpread = 25.f;
-				MovementEffect = 50.f;
-				break;
-
-			case EWeaponType::EWT_SMG:
-				WeaponBaseSpread = 20.f;
-				MovementEffect = 10.f;
-				break;
-
-			case EWeaponType::EWT_Shotgun:
-				WeaponBaseSpread = 55.f;
-				MovementEffect = 20.f;
-				break;
-
-			default:
-				break;
-			}
+			WeaponBaseSpread = CombatComp->SpawnedWeapon->CrosshairWeaponBaseSpread;
+			MovementEffect = CombatComp->SpawnedWeapon->CrosshairMovementEffect;
+			InterpSpeedForWeapon = CombatComp->SpawnedWeapon->CrosshairInterpSpeed;
 		}
 
-	    float VelocityFactor = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 600.f), FVector2D(0.f, MovementEffect), Velocity);
+		float VelocityFactor = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 600.f), FVector2D(0.f, MovementEffect),
+		                                                         Velocity);
 
-	    float TargetSpread = (WeaponBaseSpread + VelocityFactor) * ADSMultiplier;
+		float TargetSpread = (WeaponBaseSpread + VelocityFactor) * ADSMultiplier;
 
-	    CurrentVisualSpread = FMath::FInterpTo(CurrentVisualSpread, TargetSpread, DeltaTime, InterpSpeedForWeapon);
+		CurrentVisualSpread = FMath::FInterpTo(CurrentVisualSpread, TargetSpread, DeltaTime, InterpSpeedForWeapon);
 
-	    UImage* Top = Cast<UImage>(HUD->GetWidgetFromName("CrosshairUp"));
-	    UImage* Bottom = Cast<UImage>(HUD->GetWidgetFromName("CrosshairDown"));
-	    UImage* Left = Cast<UImage>(HUD->GetWidgetFromName("CrosshairLeft"));
-	    UImage* Right = Cast<UImage>(HUD->GetWidgetFromName("CrosshairRight"));
+		UImage* Top = Cast<UImage>(HUD->GetWidgetFromName("CrosshairUp"));
+		UImage* Bottom = Cast<UImage>(HUD->GetWidgetFromName("CrosshairDown"));
+		UImage* Left = Cast<UImage>(HUD->GetWidgetFromName("CrosshairLeft"));
+		UImage* Right = Cast<UImage>(HUD->GetWidgetFromName("CrosshairRight"));
 
-	    if (Top && Bottom && Left && Right) {
-		    Top->SetRenderTranslation(FVector2D(0.f, -CurrentVisualSpread));
-	    	Bottom->SetRenderTranslation(FVector2D(0.f, CurrentVisualSpread));
-	    	Left->SetRenderTranslation(FVector2D(-CurrentVisualSpread, 0.f));
-	    	Right->SetRenderTranslation(FVector2D(CurrentVisualSpread, 0.f));
-	    }
+		if (Top && Bottom && Left && Right) {
+			Top->SetRenderTranslation(FVector2D(0.f, -CurrentVisualSpread));
+			Bottom->SetRenderTranslation(FVector2D(0.f, CurrentVisualSpread));
+			Left->SetRenderTranslation(FVector2D(-CurrentVisualSpread, 0.f));
+			Right->SetRenderTranslation(FVector2D(CurrentVisualSpread, 0.f));
+		}
 	}
 }
 
@@ -238,23 +235,29 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 
 		// Weapon equips
-		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Rifle);
-		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_SMG);
-		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Shotgun);
-		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
+		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this,
+		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Rifle);
+		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this,
+		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_SMG);
+		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this,
+		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Shotgun);
+		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this,
+		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
 
 		// Spell equips
-		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
-		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
+		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this,
+		                                   &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
+		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this,
+		                                   &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
 
 		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AArsenalCharacter::AimReleased);
 
 		// Shoot
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Shoot);
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &AArsenalCharacter::ShootStarted);
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AArsenalCharacter::ShootReleased);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &AArsenalCharacter::Shoot);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this,
+		                                   &AArsenalCharacter::ShootReleased);
 	}
 }
 
@@ -280,40 +283,50 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 
 //////////////// EquipWeapon ////////////////
 void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
-	if (!CombatComp) return;
+	if (!CombatComp || bIsEquipping) return;
 
 	if (HasAuthority()) {
-		// Server: Set Attack Type and Equip Immediately
 		ServerSetAttackType(EAttackType::EAT_Weapon);
-		CombatComp->bIsRecentlyEquipped = true;
 		CombatComp->EquipWeapon(WeaponType);
+		
+		bIsEquipping = true;
+		GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
+			bIsEquipping = false;
+		}), CombatComp->GetEquipMontageLength(), false);
 	}
 	else {
-		// Client: Ask The Server to Equip
 		ServerEquipWeapon(WeaponType);
 	}
 }
 
 //////////////// ServerEquipWeapon ////////////////
 void AArsenalCharacter::ServerEquipWeapon_Implementation(EWeaponType WeaponType) {
-	if (!CombatComp) return;
+	if (!CombatComp || bIsEquipping) return;
 
 	ServerSetAttackType(EAttackType::EAT_Weapon);
 
-	// Already Equipped this Weapon -> Return
 	if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
 
-	CombatComp->bIsRecentlyEquipped = true;
 	CombatComp->EquipWeapon(WeaponType);
+	 
+	bIsEquipping = true;
+	GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
+		bIsEquipping = false;
+	}), CombatComp->GetEquipMontageLength(), false);
 }
 
 //////////////// EquipSpell ////////////////
 void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
-	if (!MagicComp || MagicComp->IsSpellOnCooldown(SpellType)) return;
+	if (!MagicComp || MagicComp->IsSpellOnCooldown(SpellType) || bIsEquipping) return;
 
 	if (HasAuthority()) {
 		ServerSetAttackType(EAttackType::EAT_Magic);
 		MagicComp->EquipSpell(SpellType);
+		
+		bIsEquipping = true;
+		GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
+			bIsEquipping = false;
+		}), EquipDelay, false);
 	}
 	else {
 		ServerEquipSpell(SpellType);
@@ -322,10 +335,15 @@ void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 
 //////////////// ServerEquipSpell (RPC) ////////////////
 void AArsenalCharacter::ServerEquipSpell_Implementation(ESpellType SpellType) {
-	if (!MagicComp) return;
+	if (!MagicComp || bIsEquipping) return;
 
 	ServerSetAttackType(EAttackType::EAT_Magic);
 	MagicComp->EquipSpell(SpellType);
+	
+	bIsEquipping = true;
+	GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
+		bIsEquipping = false;
+	}), EquipDelay, false);
 }
 
 //////////////// Aim / AimReleased ////////////////
@@ -344,7 +362,7 @@ void AArsenalCharacter::AimReleased() {
 	SetAiming(false);
 }
 
-//////////////// Shoot / ShootStarted / ShootReleased ////////////////
+//////////////// Shoot / ShootReleased ////////////////
 void AArsenalCharacter::Shoot() {
 	// Shoots for Corresponding Attack Type
 	switch (AttackType) {
@@ -356,19 +374,6 @@ void AArsenalCharacter::Shoot() {
 	case EAttackType::EAT_Magic:
 		if (MagicComp) {
 			MagicComp->Cast(true);
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-void AArsenalCharacter::ShootStarted() {
-	// Only Resets Semi Counter (Used for Semi-Auto) if AttackType is a Weapon
-	switch (AttackType) {
-	case EAttackType::EAT_Weapon:
-		if (IsLocallyControlled() && CombatComp) {
-			CombatComp->ResetSemiCounter();
 		}
 		break;
 	default:
@@ -396,14 +401,50 @@ void AArsenalCharacter::ShootReleased() {
 
 ////////////////////////////////////// Utility Functions //////////////////////////////////////
 
-//////////////// HandleDeath ////////////////
-void AArsenalCharacter::HandleDeath() {
-	// Destroys Character
-	Destroy();
-
+//////////////// Handling Death And Reset ////////////////
+void AArsenalCharacter::HandleDeath(AActor* Damager) {
 	// Destroys Character Equipment
 	if (CombatComp) CombatComp->UnequipWeapon();
-	if (MagicComp)  MagicComp->UnequipSpell();
+	if (MagicComp) MagicComp->UnequipSpell();
+	
+	// Handles Scoring
+	if (HasAuthority()) {
+		if (ATeamsGameMode* GM = GetWorld()->GetAuthGameMode<ATeamsGameMode>()) {
+			GM->HandleScore(Damager);
+		}
+		
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (PC) {
+			PC->UnPossess(); 
+
+			if (GetWorld() && CameraComp) {
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+				ASpectatorPawn* SpawnedSpectator = GetWorld()->SpawnActor<ASpectatorPawn>(ASpectatorPawn::StaticClass(), 
+					CameraComp->GetComponentLocation(), CameraComp->GetComponentRotation(), SpawnParams);
+
+				if (SpawnedSpectator) {
+					PC->Possess(SpawnedSpectator); 
+				}
+				
+				GetWorldTimerManager().SetTimer(DeathTimer, FTimerDelegate::CreateLambda([this, PC, SpawnedSpectator]() {
+					ResetPlayer(PC, SpawnedSpectator);
+				}), DeathDelay, false);
+			}
+		}
+	}
+} 
+
+void AArsenalCharacter::ResetPlayer(APlayerController* PC, APawn* Spectator) {
+	PC->UnPossess();
+	Spectator->Destroy();
+	PC->Possess(this);
+	
+	HealthComp->ResetHealth();
+	CombatComp->ResetAmmo();
+	
+	EquipWeapon(EWeaponType::EWT_Rifle);
 }
 
 //////////////// AddRecoil ////////////////
@@ -430,6 +471,9 @@ void AArsenalCharacter::ServerSetAiming_Implementation(bool bInAiming) {
 void AArsenalCharacter::ServerSetAttackType_Implementation(EAttackType NewType) {
 	if (AttackType == NewType) return;
 
+	if (CombatComp) CombatComp->Shoot(false);
+	if (MagicComp) MagicComp->Cast(false);
+
 	AttackType = NewType;
 
 	switch (AttackType) {
@@ -441,7 +485,7 @@ void AArsenalCharacter::ServerSetAttackType_Implementation(EAttackType NewType) 
 		break;
 	default:
 		if (CombatComp) CombatComp->UnequipWeapon();
-		if (MagicComp)  MagicComp->UnequipSpell();
+		if (MagicComp) MagicComp->UnequipSpell();
 		break;
 	}
 }
@@ -466,19 +510,19 @@ FHitResult AArsenalCharacter::TraceUnderCrosshairs() {
 		return FHitResult();
 
 	const FVector Start = CrosshairWorldPos;
-	const FVector End = Start + CrosshairWorldDir * TRACE_LENGTH;
+	const FVector End = Start + CrosshairWorldDir * 80000;
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
-    
+
 	if (CombatComp && CombatComp->SpawnedWeapon) Params.AddIgnoredActor(CombatComp->SpawnedWeapon);
-    
+
 	if (MagicComp && MagicComp->HeldSpell) {
 		Params.AddIgnoredActor(MagicComp->HeldSpell);
 	}
 
 	GetWorld()->LineTraceSingleByChannel(TraceHitResult, Start, End, ECC_Visibility, Params);
-    
+
 	if (!TraceHitResult.bBlockingHit) {
 		TraceHitResult.ImpactPoint = End;
 	}
@@ -504,8 +548,8 @@ void AArsenalCharacter::SetTeamColor(ETeam Team) {
 		break;
 	default:
 		for (int i = 0; i < NoMaterials.Num(); i++) {
-        	GetMesh()->SetMaterial(i, NoMaterials[i]);
-        }
+			GetMesh()->SetMaterial(i, NoMaterials[i]);
+		}
 		break;
 	}
 }
@@ -515,7 +559,7 @@ void AArsenalCharacter::SetSpawnPoint() {
 		TArray<AActor*> PlayerStarts;
 		UGameplayStatics::GetAllActorsOfClass(this, ATeamPlayerStart::StaticClass(), PlayerStarts);
 		TArray<ATeamPlayerStart*> TeamPlayerStarts;
-		
+
 		for (AActor* Start : PlayerStarts) {
 			ATeamPlayerStart* TeamPlayerStart = Cast<ATeamPlayerStart>(Start);
 			if (TeamPlayerStart && TeamPlayerStart->Team == ArsenalPlayerState->GetTeam()) {
@@ -555,7 +599,7 @@ bool AArsenalCharacter::IsAiming() {
 
 //////////////// IsShooting ////////////////
 bool AArsenalCharacter::IsShooting() {
-	return (CombatComp && CombatComp->bShooting);
+	return (CombatComp && GetWorldTimerManager().IsTimerActive(CombatComp->ShootTimer));
 }
 
 ////////////////////////////////////// Replication Notifies //////////////////////////////////////

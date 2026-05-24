@@ -7,61 +7,85 @@
 
 void AShotgun::Shoot() {
     AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
-    if (!InstigatorPawn || !InstigatorPawn->CombatComp) return;
+    if (!InstigatorPawn || !InstigatorPawn->IsLocallyControlled()) return;
 
-    const float CurrentTime = GetWorld()->GetTimeSeconds();
-
-    if (CurrentTime - LastShootTime < ShootRate) return;
-
-    if (FireType == EFireType::EFT_SemiAuto && InstigatorPawn->CombatComp->SemiShotCounter > 0) return;
-
-    LastShootTime = CurrentTime;
-
-    if (InstigatorPawn->IsLocallyControlled() && InstigatorPawn->CombatComp) {
-        InstigatorPawn->CombatComp->PlayShootMontage();
+    if (CurrentAmmo <= 0) {
+        if (InstigatorPawn->CombatComp) InstigatorPawn->CombatComp->Shoot(false);
+        return;
     }
 
-    FHitResult CrosshairHitResult = InstigatorPawn->TraceUnderCrosshairs();
+    const FVector CameraLoc = InstigatorPawn->CameraComp->GetComponentLocation();
+    const FHitResult CrosshairHit = InstigatorPawn->TraceUnderCrosshairs();
+    const FVector CrosshairImpact = CrosshairHit.bBlockingHit ? CrosshairHit.ImpactPoint : CrosshairHit.TraceEnd;
+    const FVector AimDir = (CrosshairImpact - CameraLoc).GetSafeNormal();
 
-    FVector CameraLoc = InstigatorPawn->CameraComp->GetComponentLocation();
-    FVector CrosshairImpactPoint = CrosshairHitResult.bBlockingHit ? CrosshairHitResult.ImpactPoint : CrosshairHitResult.TraceEnd;
-    FVector AimDir = (CrosshairImpactPoint - CameraLoc).GetSafeNormal();
+    const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
+    const FVector MuzzleLoc = MuzzleSocket ? MuzzleSocket->GetSocketLocation(GetWeaponMesh()) : GetActorLocation();
 
-    const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName("MuzzleFlash");
-    if (!MuzzleFlashSocket) return;
-    MuzzleLocation = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
-
-    FCollisionQueryParams PelletParams;
-    PelletParams.AddIgnoredActor(InstigatorPawn);
-    PelletParams.AddIgnoredActor(this);
+    const bool bAuth = HasAuthority();
+    if (bAuth && !TryConsumeAmmo(Pellets)) return;
 
     for (int i = 0; i < Pellets; i++) {
         FVector PelletDir = AimDir;
         PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::UpVector);
         PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::RightVector);
+        const FVector End = CameraLoc + (PelletDir * 10000.0f);
 
-        const FVector End = CameraLoc + PelletDir * 10000.0f;
         FHitResult PelletHit;
-        GetWorld()->LineTraceSingleByChannel(PelletHit, CameraLoc, End, ECollisionChannel::ECC_Visibility, PelletParams);
+        FCollisionQueryParams Params;
+        Params.AddIgnoredActor(InstigatorPawn);
+        GetWorld()->LineTraceSingleByChannel(PelletHit, CameraLoc, End, ECC_Visibility, Params);
 
-        const bool bPelletHit = PelletHit.bBlockingHit;
-        const FVector PelletImpact = bPelletHit ? PelletHit.ImpactPoint : End;
+        const bool bHit = PelletHit.bBlockingHit;
+        const FVector ImpactPoint = bHit ? PelletHit.ImpactPoint : End;
 
-        if (InstigatorPawn->IsLocallyControlled()) {
-            LocalShootEffects(MuzzleLocation, PelletImpact, PelletHit);
-        }
+        LocalShootEffects(MuzzleLoc, ImpactPoint, PelletHit);
 
-        if (!HasAuthority()) {
-            ServerShoot(bPelletHit, PelletImpact);
-        }
-        else {
-            ServerProcessShot(bPelletHit, PelletImpact);
+        if (bAuth) {
+            ServerProcessShot(bHit, ImpactPoint);
         }
     }
 
     InstigatorPawn->AddRecoil(RecoilMin, RecoilMax);
 
-    if (InstigatorPawn->CombatComp) {
-        InstigatorPawn->CombatComp->SetSemiCounter(InstigatorPawn->CombatComp->SemiShotCounter + 1);
+    if (bAuth) {
+        MulticastImpactEffects(false, FVector::ZeroVector);
+        MulticastPlayShootAnimation();
     }
+    else {
+        ServerShotgunFire(CameraLoc, CrosshairImpact);
+    }
+}
+
+void AShotgun::ServerShotgunFire_Implementation(FVector_NetQuantize CameraLoc, FVector_NetQuantize CrosshairImpact) {
+    AuthoritativeShotgunFire(CameraLoc, CrosshairImpact);
+}
+
+void AShotgun::AuthoritativeShotgunFire(const FVector& CameraLoc, const FVector& CrosshairImpact) {
+    if (!TryConsumeAmmo(Pellets)) return;
+
+    AArsenalCharacter* InstigatorPawn = Cast<AArsenalCharacter>(GetOwner());
+    if (!InstigatorPawn) return;
+
+    const FVector AimDir = (CrosshairImpact - CameraLoc).GetSafeNormal();
+
+    for (int i = 0; i < Pellets; i++) {
+        FVector PelletDir = AimDir;
+        PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::UpVector);
+        PelletDir = PelletDir.RotateAngleAxis(FMath::RandRange(-PelletAngle, PelletAngle), FVector::RightVector);
+        const FVector End = CameraLoc + (PelletDir * 10000.0f);
+
+        FHitResult PelletHit;
+        FCollisionQueryParams Params;
+        Params.AddIgnoredActor(InstigatorPawn);
+        GetWorld()->LineTraceSingleByChannel(PelletHit, CameraLoc, End, ECC_Visibility, Params);
+
+        const bool bHit = PelletHit.bBlockingHit;
+        const FVector ImpactPoint = bHit ? PelletHit.ImpactPoint : End;
+
+        ServerProcessShot(bHit, ImpactPoint);
+    }
+
+    MulticastImpactEffects(false, FVector::ZeroVector);
+    MulticastPlayShootAnimation();
 }

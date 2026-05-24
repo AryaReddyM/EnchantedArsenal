@@ -10,6 +10,7 @@ class UParticleSystem;
 class UAnimMontage;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetWeaponMesh);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChanged, int32, NewAmmo, int32, MagSize);
 
 UENUM(BlueprintType)
 enum class EFireType : uint8 {
@@ -83,7 +84,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* MuzzleFlashParticles;
-	FVector MuzzleLocation;
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticles;
@@ -103,8 +103,6 @@ public:
 	UPROPERTY(EditAnywhere)
 	float RecoilMax;
 
-	float LastShootTime = -1000.f;
-
 	UPROPERTY(EditAnywhere)
 	float EquipDelay = 2.0f;
 
@@ -112,4 +110,24 @@ public:
 	UAnimMontage* ShootMontage;
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* EquipMontage;
+	
+	UPROPERTY(EditDefaultsOnly)
+	int32 MagSize = 30;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAmmoChanged OnAmmoChanged;
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentAmmo)
+	int32 CurrentAmmo;
+	UFUNCTION()
+	void OnRep_CurrentAmmo();
+
+	bool TryConsumeAmmo(int AmmoAmount);
+	
+	UPROPERTY(EditAnywhere)
+	float CrosshairWeaponBaseSpread = 15.f;
+	UPROPERTY(EditAnywhere)
+	float CrosshairMovementEffect = 5.f;
+	UPROPERTY(EditAnywhere)
+	float CrosshairInterpSpeed = 15.f;
 };

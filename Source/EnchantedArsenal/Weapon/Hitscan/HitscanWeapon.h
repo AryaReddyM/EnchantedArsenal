@@ -12,21 +12,21 @@ class ENCHANTEDARSENAL_API AHitscanWeapon : public AWeapon {
 
 public:
 	virtual void Shoot() override;
+
 	UFUNCTION(Server, Reliable)
 	void ServerShoot(bool bHitSomething, const FVector_NetQuantize& ImpactPoint);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastImpactEffects(FVector_NetQuantize ImpactPoint);
+	void MulticastImpactEffects(bool bHit, FVector_NetQuantize ImpactPoint);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayShootAnimation();
+
+	void AuthoritativeShot(bool bHitSomething, const FVector& ImpactPoint);
 
 	void ServerProcessShot(bool bHitSomething, const FVector& ImpactPoint);
 
 	bool CheckForHeadshot(AActor* HitActor, FVector ImpactPoint);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayShootAnimation();
-
 	void LocalShootEffects(const FVector& TraceStart, const FVector& TraceEnd, const FHitResult& CrosshairHitResult);
-
-protected:
-	FTimerHandle ShootTimerHandle;
 };

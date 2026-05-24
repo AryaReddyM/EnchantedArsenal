@@ -22,6 +22,13 @@ class ENCHANTEDARSENAL_API AArsenalPlayerState : public APlayerState {
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+public:
+	void SetTeam(ETeam TeamToSet);
+	FORCEINLINE ETeam GetTeam() const { return Team; }
+
+	static bool IsHostile(AActor* Instigator, AActor* Other);
+	
+	
 private:
 	AArsenalCharacter* Character;
 
@@ -30,10 +37,4 @@ private:
 
 	UFUNCTION()
 	void OnRep_Team();
-
-public:
-	FORCEINLINE ETeam GetTeam() const { return Team; }
-	void SetTeam(ETeam TeamToSet);
-
-	static bool IsHostile(AActor* Instigator, AActor* Other);
 };

@@ -23,7 +23,7 @@ void ABoulder::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiv
 
 	if (IsEnemy(OtherActor)) {
 		if (UHealthComponent* HealthComp = OtherActor->FindComponentByClass<UHealthComponent>()) {
-			HealthComp->ApplyDamage(Data ? Data->GetDamage(SpellTags) : 0.0f);
+			HealthComp->ApplyDamage(Data ? Data->GetDamage(SpellTags) : 0., GetOwner());
 		}
 		Destroy();
 	}

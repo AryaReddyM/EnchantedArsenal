@@ -4,6 +4,7 @@
 #include "GameFramework/GameState.h"
 #include "ArsenalGameState.generated.h"
 
+enum class ETeam : uint8;
 class AArsenalPlayerState;
 
 UCLASS()
@@ -13,6 +14,11 @@ class ENCHANTEDARSENAL_API AArsenalGameState : public AGameState
 	
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	void SetTeamScore(ETeam TeamToSet, float ScoreToAdd);
+	float GetTeamScore(ETeam TeamToGet) const;
+	
+	void UpdateTeamScoreUI(ETeam TeamToUpdate, float NewScore);
 
 	TArray<AArsenalPlayerState*> RedTeam;
 	TArray<AArsenalPlayerState*> BlueTeam;
