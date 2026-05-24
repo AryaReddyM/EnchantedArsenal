@@ -7,18 +7,18 @@
 enum class ETeam : uint8;
 class AArsenalPlayerState;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTeamScoreChanged, ETeam, Team, float, NewScore);
+
 UCLASS()
 class ENCHANTEDARSENAL_API AArsenalGameState : public AGameState
 {
 	GENERATED_BODY()
-	
+
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
+
 	void SetTeamScore(ETeam TeamToSet, float ScoreToAdd);
 	float GetTeamScore(ETeam TeamToGet) const;
-	
-	void UpdateTeamScoreUI(ETeam TeamToUpdate, float NewScore);
 
 	TArray<AArsenalPlayerState*> RedTeam;
 	TArray<AArsenalPlayerState*> BlueTeam;
@@ -34,4 +34,7 @@ public:
 
 	UFUNCTION()
 	void OnRep_RedTeamScore();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnTeamScoreChanged OnTeamScoreChanged;
 };

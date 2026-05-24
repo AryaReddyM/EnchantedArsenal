@@ -6,6 +6,7 @@
 #include "InputAction.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Alembic/AbcGeom/IFaceSet.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ArrowComponent.h"
 #include "Components/InputComponent.h"
@@ -21,10 +22,13 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnchantedArsenal/Components/MagicComponent.h"
 #include "EnchantedArsenal/Gamemode/TeamsGameMode.h"
+#include "EnchantedArsenal/GameState/ArsenalGameState.h"
+#include "EnchantedArsenal/Physics/PhysicsData.h"
 #include "EnchantedArsenal/PlayerStart/TeamPlayerStart.h"
 #include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
 #include "GameFramework/SpectatorPawn.h"
 #include "Kismet/GameplayStatics.h"
+#include "PhysicsEngine/PhysicalAnimationComponent.h"
 
 ////////////////////////////////////// Function Definitions //////////////////////////////////////
 
@@ -51,6 +55,8 @@ AArsenalCharacter::AArsenalCharacter() {
 
 	AimCameraPosComp = CreateDefaultSubobject<UArrowComponent>(TEXT("Aim Camera Position Component"));
 	AimCameraPosComp->SetupAttachment(GetMesh(), "head");
+	
+	PhysComp = CreateDefaultSubobject<UPhysicalAnimationComponent>(TEXT("Physics Animation Component"));
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 	CombatComp->SetIsReplicated(true);
@@ -110,13 +116,13 @@ void AArsenalCharacter::BeginPlay() {
 		if (UProgressBar* FoundBar = Cast<UProgressBar>(HUD->GetWidgetFromName("HealthBar"))) {
 			HealthComp->SetHealthBar(FoundBar);
 		}
-		
-		if (UTextBlock* BlueText = Cast<UTextBlock>(HUD->GetWidgetFromName("BlueScoreText"))) {
-			BlueText->SetText(FText::Format(FText::FromString("Blue Score: {0}"), 0));
-		}
-    
-		if (UTextBlock* RedText = Cast<UTextBlock>(HUD->GetWidgetFromName("RedScoreText"))) {
-			RedText->SetText(FText::Format(FText::FromString("Red Score: {0}"), 0));
+
+		if (AArsenalGameState* GS = GetWorld()->GetGameState<AArsenalGameState>()) {
+			GS->OnTeamScoreChanged.AddDynamic(this, &AArsenalCharacter::HandleTeamScoreChanged);
+
+			// Catch up to the current score (in case we joined or respawned mid-match).
+			HandleTeamScoreChanged(ETeam::ET_BlueTeam, GS->BlueTeamScore);
+			HandleTeamScoreChanged(ETeam::ET_RedTeam,  GS->RedTeamScore);
 		}
 	}
 
@@ -407,7 +413,6 @@ void AArsenalCharacter::HandleDeath(AActor* Damager) {
 	if (CombatComp) CombatComp->UnequipWeapon();
 	if (MagicComp) MagicComp->UnequipSpell();
 	
-	// Handles Scoring
 	if (HasAuthority()) {
 		if (ATeamsGameMode* GM = GetWorld()->GetAuthGameMode<ATeamsGameMode>()) {
 			GM->HandleScore(Damager);
@@ -418,6 +423,7 @@ void AArsenalCharacter::HandleDeath(AActor* Damager) {
 			PC->UnPossess(); 
 
 			if (GetWorld() && CameraComp) {
+				// Player -> Spectator
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
@@ -428,22 +434,69 @@ void AArsenalCharacter::HandleDeath(AActor* Damager) {
 					PC->Possess(SpawnedSpectator); 
 				}
 				
+				// Ragdolls Body
+				MulticastStartRagdoll();
+				
+				// Timer Until Respawn
 				GetWorldTimerManager().SetTimer(DeathTimer, FTimerDelegate::CreateLambda([this, PC, SpawnedSpectator]() {
 					ResetPlayer(PC, SpawnedSpectator);
 				}), DeathDelay, false);
 			}
 		}
 	}
-} 
+}
+
+void AArsenalCharacter::MulticastStartRagdoll_Implementation() {
+	if (!PhysicsData || !PhysComp || !GetMesh()) return;
+
+	PhysComp->SetSkeletalMeshComponent(GetMesh());
+	PhysComp->ApplyPhysicalAnimationSettings("pelvis", PhysicsData->RagdollPhysicalAnimData);
+
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true);
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (MoveComp) MoveComp->DisableMovement();
+}
+
+void AArsenalCharacter::MulticastEndRagdoll_Implementation() {
+	if (!GetMesh()) return;
+
+	GetMesh()->SetAllBodiesSimulatePhysics(false);
+	GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
+	GetMesh()->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	GetMesh()->SetRelativeTransform(FTransform(
+		FQuat(FRotator(0.0f, -90.0f, 0.0f)), // Rotation
+		FVector(0.0f, 1.0f, -90.0f), // Location
+		FVector(0.9375f, 0.9375f, 0.9375f) // Scale
+	));
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	if (MoveComp) MoveComp->SetMovementMode(MOVE_Walking);
+
+}
+
+void AArsenalCharacter::HandleTeamScoreChanged(ETeam Team, float NewScore) {
+	if (!HUD) return;
+
+	const FString WidgetName = (Team == ETeam::ET_BlueTeam) ? TEXT("BlueScoreText") : TEXT("RedScoreText");
+	const FString LabelText  = (Team == ETeam::ET_BlueTeam) ? TEXT("Blue Score: {0}") : TEXT("Red Score: {0}");
+
+	if (UTextBlock* ScoreTextBlock = Cast<UTextBlock>(HUD->GetWidgetFromName(*WidgetName))) {
+		ScoreTextBlock->SetText(FText::Format(FText::FromString(LabelText), FMath::FloorToInt(NewScore)));
+	}
+}
 
 void AArsenalCharacter::ResetPlayer(APlayerController* PC, APawn* Spectator) {
+	MulticastEndRagdoll();
+	SetSpawnPoint();
+
 	PC->UnPossess();
 	Spectator->Destroy();
 	PC->Possess(this);
-	
+
 	HealthComp->ResetHealth();
 	CombatComp->ResetAmmo();
-	
 	EquipWeapon(EWeaponType::EWT_Rifle);
 }
 

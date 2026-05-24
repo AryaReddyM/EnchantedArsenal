@@ -4,18 +4,9 @@
 #include "GameFramework/Character.h"
 #include "ArsenalCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class EAttackType : uint8 {
-	EAT_Initial UMETA(DisplayName = "Initial Type"),
-	EAT_Unarmed UMETA(DisplayName = "Unarmed"),
-	EAT_Weapon UMETA(DisplayName = "Weapon"),
-	EAT_Magic UMETA(DisplayName = "Magic"),
-
-	EAT_MAX UMETA(DisplayName = "DefaultMax")
-};
-
-////////////////////////////////////// Forward Declarations //////////////////////////////////////
-
+class UPhysicsData;
+class UPhysicalAnimationComponent;
+struct FPhysicalAnimationData;
 class UBoxComponent;
 class UCombatComponent;
 class UHealthComponent;
@@ -34,6 +25,18 @@ enum class ESpellType : uint8;
 class AArsenalPlayerState;
 class UImage;
 enum class ETeam : uint8;
+
+UENUM(BlueprintType)
+enum class EAttackType : uint8 {
+	EAT_Initial UMETA(DisplayName = "Initial Type"),
+	EAT_Unarmed UMETA(DisplayName = "Unarmed"),
+	EAT_Weapon UMETA(DisplayName = "Weapon"),
+	EAT_Magic UMETA(DisplayName = "Magic"),
+
+	EAT_MAX UMETA(DisplayName = "DefaultMax")
+};
+
+////////////////////////////////////// Forward Declarations //////////////////////////////////////
 
 UCLASS()
 class ENCHANTEDARSENAL_API AArsenalCharacter : public ACharacter {
@@ -84,6 +87,12 @@ public:
 	UFUNCTION()
 	void HandleDeath(AActor* Damager);
 	
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStartRagdoll();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastEndRagdoll();
+	
 	void ResetPlayer(APlayerController* PC, APawn* Spectator);
 
 	void AddRecoil(float Min, float Max);
@@ -99,8 +108,11 @@ public:
 	
 	void SetTeamColor(ETeam Team);
 	void SetSpawnPoint();
-	
+
 	void OnPlayerStateInit();
+
+	UFUNCTION()
+	void HandleTeamScoreChanged(ETeam Team, float NewScore);
 
 	// Getters
 	AWeapon* GetWeapon();
@@ -133,14 +145,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UBoxComponent* HeadshotBoxCollisionComp;
 
-	// Mesh
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	USkeletalMeshComponent* SkeletalMeshComp = FindComponentByClass<USkeletalMeshComponent>();
-
 	// Movement
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
-
+	
+	// Physics Animation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPhysicalAnimationComponent* PhysComp;
+	
 	// Weapon Combat
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"), Replicated)
 	UCombatComponent* CombatComp;
@@ -279,5 +291,10 @@ public:
 	
 	// Death
 	FTimerHandle DeathTimer;
-	float DeathDelay = 3.0f;
+	UPROPERTY(EditAnywhere, Category = "Death")
+	float DeathDelay = 10.0f;
+	
+	// Physics Animation
+	UPROPERTY(EditAnywhere, Category = "Ragdoll")
+	UPhysicsData* PhysicsData;
 };
