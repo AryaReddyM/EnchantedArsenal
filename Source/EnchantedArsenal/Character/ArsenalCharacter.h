@@ -76,6 +76,10 @@ public:
 	void EquipSpell(ESpellType SpellType);
 	UFUNCTION(Server, Reliable)
 	void ServerEquipSpell(ESpellType SpellType);
+	
+	void Reload();
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
 
 	void Aim();
 	void AimReleased();
@@ -199,6 +203,10 @@ public:
 	// Equip Pistol
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipPistolAction;
+	
+	// Reload
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ReloadAction;
 
 	////// Spells //////
 
@@ -248,7 +256,7 @@ public:
 
 	// Aim Variables
 	UPROPERTY(Replicated)
-	bool bAiming;
+	bool bIsAiming;
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed = 600.0f;
 	UPROPERTY(EditAnywhere)
@@ -284,10 +292,19 @@ public:
 
 	virtual void OnRep_PlayerState() override;
 	
-	// Equip Handling
+	// Equip
 	bool bIsEquipping = false;
 	float EquipDelay = 2.0f;
 	FTimerHandle EquipTimerHandle;
+	
+	// Reload
+	UPROPERTY(ReplicatedUsing=OnRep_bIsReloading)
+	bool bIsReloading = false;
+	UFUNCTION()
+	void OnRep_bIsReloading();
+	UPROPERTY(EditAnywhere, Category = "Reload")
+	float ReloadDelay = 3.0f; // Temp, Switch With Reload Montage Length
+	FTimerHandle ReloadTimerHandle;
 	
 	// Death
 	FTimerHandle DeathTimer;

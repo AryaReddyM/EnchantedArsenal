@@ -101,8 +101,10 @@ void UCombatComponent::HandleAmmoChanged(int32 NewAmmo, int32 MagSize) {
 }
 
 void UCombatComponent::ResetAmmo() {
-	for (TTuple<EWeaponType, int>& KV : AmmoReserve) {
-		KV.Value = GetWeaponClass(KV.Key)->MagSize;
+	for (EWeaponType Type : TEnumRange<EWeaponType>()) {
+		if (GetWeaponClass(Type)) {
+			GetWeaponClass(Type)->Reload();
+		}
 	}
 }
 

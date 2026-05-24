@@ -77,7 +77,7 @@ void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 	DOREPLIFETIME(AArsenalCharacter, CombatComp);
 	DOREPLIFETIME(AArsenalCharacter, HealthComp);
-	DOREPLIFETIME(AArsenalCharacter, bAiming);
+	DOREPLIFETIME(AArsenalCharacter, bIsAiming);
 	DOREPLIFETIME(AArsenalCharacter, AttackType);
 }
 
@@ -241,20 +241,17 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 
 		// Weapon equips
-		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this,
-		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Rifle);
-		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this,
-		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_SMG);
-		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this,
-		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Shotgun);
-		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this,
-		                                   &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
+		EnhancedInputComponent->BindAction(EquipRifleAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Rifle);
+		EnhancedInputComponent->BindAction(EquipSMGAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_SMG);
+		EnhancedInputComponent->BindAction(EquipShotgunAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Shotgun);
+		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
 
 		// Spell equips
-		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this,
-		                                   &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
-		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this,
-		                                   &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
+		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
+		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
+		
+		// Reload
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AArsenalCharacter::Reload);
 
 		// Aim
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &AArsenalCharacter::Aim);
@@ -262,8 +259,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		// Shoot
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &AArsenalCharacter::Shoot);
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this,
-		                                   &AArsenalCharacter::ShootReleased);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AArsenalCharacter::ShootReleased);
 	}
 }
 
@@ -287,9 +283,16 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 
 ////////////////////////////////////// Combat / Magic Functions //////////////////////////////////////
 
-//////////////// EquipWeapon ////////////////
+//////////////// EquipWeapon / ServerEquipWeapon ////////////////
 void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
 	if (!CombatComp || bIsEquipping) return;
+	
+	if (bIsReloading) {
+		if (HasAuthority()) {
+			GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+		}
+		bIsReloading = false;
+	}
 
 	if (HasAuthority()) {
 		ServerSetAttackType(EAttackType::EAT_Weapon);
@@ -305,25 +308,20 @@ void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
 	}
 }
 
-//////////////// ServerEquipWeapon ////////////////
 void AArsenalCharacter::ServerEquipWeapon_Implementation(EWeaponType WeaponType) {
-	if (!CombatComp || bIsEquipping) return;
-
-	ServerSetAttackType(EAttackType::EAT_Weapon);
-
-	if (CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
-
-	CombatComp->EquipWeapon(WeaponType);
-	 
-	bIsEquipping = true;
-	GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
-		bIsEquipping = false;
-	}), CombatComp->GetEquipMontageLength(), false);
+	EquipWeapon(WeaponType);
 }
 
-//////////////// EquipSpell ////////////////
+//////////////// EquipSpell / ServerEquipSpell ////////////////
 void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 	if (!MagicComp || MagicComp->IsSpellOnCooldown(SpellType) || bIsEquipping) return;
+	
+	if (bIsReloading) {
+		if (HasAuthority()) {
+			GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+		}
+		bIsReloading = false;
+	}
 
 	if (HasAuthority()) {
 		ServerSetAttackType(EAttackType::EAT_Magic);
@@ -339,17 +337,36 @@ void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 	}
 }
 
-//////////////// ServerEquipSpell (RPC) ////////////////
 void AArsenalCharacter::ServerEquipSpell_Implementation(ESpellType SpellType) {
-	if (!MagicComp || bIsEquipping) return;
+	EquipSpell(SpellType);
+}
 
-	ServerSetAttackType(EAttackType::EAT_Magic);
-	MagicComp->EquipSpell(SpellType);
-	
-	bIsEquipping = true;
-	GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
-		bIsEquipping = false;
-	}), EquipDelay, false);
+//////////////// Reload / ServerReload ////////////////
+void AArsenalCharacter::Reload() {
+	if (bIsReloading || bIsEquipping) return;
+
+	if (HasAuthority()) {
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Server: Start Reload"));
+		bIsReloading = true;
+        
+		GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, FTimerDelegate::CreateLambda([this]() {
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Server: End Reload"));
+			bIsReloading = false;
+			
+			if (CombatComp && CombatComp->SpawnedWeapon) {
+				CombatComp->SpawnedWeapon->Reload();
+			}
+		}), ReloadDelay, false);
+	}
+	else {
+		bIsReloading = true; 
+        
+		ServerReload(); 
+	}
+}
+
+void AArsenalCharacter::ServerReload_Implementation() {
+	Reload();
 }
 
 //////////////// Aim / AimReleased ////////////////
@@ -370,10 +387,12 @@ void AArsenalCharacter::AimReleased() {
 
 //////////////// Shoot / ShootReleased ////////////////
 void AArsenalCharacter::Shoot() {
+	if (bIsEquipping) return;
+	
 	// Shoots for Corresponding Attack Type
 	switch (AttackType) {
 	case EAttackType::EAT_Weapon:
-		if (CombatComp) {
+		if (CombatComp && !bIsReloading) {
 			CombatComp->Shoot(true);
 		}
 		break;
@@ -508,16 +527,16 @@ void AArsenalCharacter::AddRecoil(float Min, float Max) {
 
 //////////////// SetAiming / ServerSetAiming ////////////////
 void AArsenalCharacter::SetAiming(bool bInAiming) {
-	bAiming = bInAiming;
+	bIsAiming = bInAiming;
 	ServerSetAiming(bInAiming);
 
-	MoveComp->MaxWalkSpeed = bAiming ? AimWalkSpeed : BaseWalkSpeed;
+	MoveComp->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 }
 
 void AArsenalCharacter::ServerSetAiming_Implementation(bool bInAiming) {
-	bAiming = bInAiming;
+	bIsAiming = bInAiming;
 
-	MoveComp->MaxWalkSpeed = bAiming ? AimWalkSpeed : BaseWalkSpeed;
+	MoveComp->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 }
 
 //////////////// ServerSetAttackType ////////////////
@@ -647,7 +666,7 @@ bool AArsenalCharacter::IsWeaponEquipped() {
 
 //////////////// IsAiming ////////////////
 bool AArsenalCharacter::IsAiming() {
-	return bAiming;
+	return bIsAiming;
 }
 
 //////////////// IsShooting ////////////////
@@ -661,10 +680,22 @@ bool AArsenalCharacter::IsShooting() {
 void AArsenalCharacter::OnRep_AttackType() {
 }
 
+//////////////// OnRep_PlayerState ////////////////
 void AArsenalCharacter::OnRep_PlayerState() {
 	Super::OnRep_PlayerState();
 	ArsenalPlayerState = GetPlayerState<AArsenalPlayerState>();
 	if (ArsenalPlayerState) {
 		OnPlayerStateInit();
+	}
+}
+
+//////////////// OnRep_bIsReloading ////////////////
+void AArsenalCharacter::OnRep_bIsReloading() {
+	// Client visuals and shii
+	if (bIsReloading) {
+		// Play reload montage / show UI progress bar
+	}
+	else {
+		// Stop reload montage / hide UI progress bar
 	}
 }

@@ -55,6 +55,13 @@ void AWeapon::SetWeaponType(EWeaponType InWeaponType) {
 	SetWeaponMesh.Broadcast();
 }
 
+void AWeapon::Reload() {
+	if (HasAuthority()) {
+		CurrentAmmo = MagSize;
+		OnAmmoChanged.Broadcast(CurrentAmmo, MagSize);
+	}
+}
+
 void AWeapon::OnRep_WeaponType() {
 	SetWeaponMesh.Broadcast();
 }

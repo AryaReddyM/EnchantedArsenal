@@ -31,6 +31,7 @@ enum class EWeaponType : uint8 {
 	
 	EWT_MAX UMETA(DisplayName = "DefaultMax")
 };
+ENUM_RANGE_BY_COUNT(EWeaponType, EWeaponType::EWT_MAX);
 
 UCLASS()
 class ENCHANTEDARSENAL_API AWeapon : public AActor {
@@ -52,6 +53,8 @@ public:
 	virtual void StopShoot();
 
 	void SetWeaponType(EWeaponType InWeaponState);
+	
+	void Reload();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon Properties")
 	USceneComponent* BaseRoot;
