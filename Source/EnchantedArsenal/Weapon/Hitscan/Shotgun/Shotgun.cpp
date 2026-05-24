@@ -13,6 +13,7 @@ void AShotgun::Shoot() {
         if (InstigatorPawn->CombatComp) {
             InstigatorPawn->CombatComp->StopShoot();
         }
+        InstigatorPawn->Reload();
         return;
     }
 
@@ -56,6 +57,10 @@ void AShotgun::Shoot() {
     }
     else {
         ServerShotgunFire(CameraLoc, CrosshairImpact);
+    }
+    
+    if (CurrentAmmo <= 0) {
+        InstigatorPawn->Reload();
     }
 }
 

@@ -78,14 +78,13 @@ void UCombatComponent::UnequipWeapon() {
 void UCombatComponent::Shoot() {
 	if (!SpawnedWeapon || !Character) return;
 
-	const float Now = GetWorld()->GetTimeSeconds();
-	if (Now - LastShootTime < SpawnedWeapon->ShootRate) return;
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	if (CurrentTime - LastShootTime < SpawnedWeapon->ShootRate) return;
 
 	FireOneShot();
 
 	if (SpawnedWeapon->FireType == EFireType::EFT_Auto) {
-		GetWorld()->GetTimerManager().SetTimer(
-			ShootTimer, this, &UCombatComponent::FireOneShot, SpawnedWeapon->ShootRate, true);
+		GetWorld()->GetTimerManager().SetTimer(ShootTimer, this, &UCombatComponent::FireOneShot, SpawnedWeapon->ShootRate, true);
 	}
 }
 
@@ -110,8 +109,6 @@ void UCombatComponent::FireOneShot() {
 }
 
 void UCombatComponent::HandleAmmoChanged(int32 NewAmmo, int32 MaxAmmo) {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Ammo: %d/%d"), NewAmmo, MaxAmmo));
-
 	if (!Character || !Character->IsLocallyControlled() || !Character->HUD) return;
 
 	if (UTextBlock* AmmoText = Cast<UTextBlock>(Character->HUD->GetWidgetFromName("AmmoText"))) {
@@ -148,9 +145,22 @@ void UCombatComponent::PlayEquipMontage() {
 	}
 }
 
+void UCombatComponent::PlayReloadMontage() {
+	if (!Character || !SpawnedWeapon || !SpawnedWeapon->ReloadMontage) return;
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
+	if (AnimInstance && !AnimInstance->Montage_IsPlaying(SpawnedWeapon->ReloadMontage)) {
+		AnimInstance->Montage_Play(SpawnedWeapon->ReloadMontage);
+	}
+}
+
 float UCombatComponent::GetEquipMontageLength() {
 	if (!SpawnedWeapon || !SpawnedWeapon->EquipMontage) return 0.01f;
-	return SpawnedWeapon->EquipMontage->GetPlayLength();
+	return FMath::Max(SpawnedWeapon->EquipMontage->GetPlayLength(), 0.01f);
+}
+
+float UCombatComponent::GetReloadMontageLength() {
+	if (!SpawnedWeapon || !SpawnedWeapon->ReloadMontage) return 0.01f;
+	return FMath::Max(SpawnedWeapon->ReloadMontage->GetPlayLength(), 0.01f);
 }
 
 AWeapon* UCombatComponent::GetWeaponClass(EWeaponType Type) const {

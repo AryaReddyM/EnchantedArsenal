@@ -36,8 +36,10 @@ public:
 
 	void PlayShootMontage();
 	void PlayEquipMontage();
+	void PlayReloadMontage();
 	
 	float GetEquipMontageLength();
+	float GetReloadMontageLength();
 	AWeapon* GetWeaponClass(EWeaponType Type) const;
 
 	AArsenalCharacter* Character;

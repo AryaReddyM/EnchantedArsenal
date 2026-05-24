@@ -302,8 +302,6 @@ public:
 	bool bIsReloading = false;
 	UFUNCTION()
 	void OnRep_bIsReloading();
-	UPROPERTY(EditAnywhere, Category = "Reload")
-	float ReloadDelay = 3.0f; // Temp, Switch With Reload Montage Length
 	FTimerHandle ReloadTimerHandle;
 	
 	// Death

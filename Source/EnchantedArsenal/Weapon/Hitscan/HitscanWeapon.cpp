@@ -20,6 +20,7 @@ void AHitscanWeapon::Shoot() {
         if (InstigatorPawn->CombatComp) {
             InstigatorPawn->CombatComp->StopShoot();
         }
+        InstigatorPawn->Reload();
         return;
     }
 
@@ -40,6 +41,10 @@ void AHitscanWeapon::Shoot() {
     }
     else {
         ServerShoot(bHit, ImpactPoint);
+    }
+    
+    if (CurrentAmmo <= 0) {
+        InstigatorPawn->Reload();
     }
 }
 

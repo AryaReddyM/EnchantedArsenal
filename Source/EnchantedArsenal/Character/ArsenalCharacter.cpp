@@ -285,8 +285,8 @@ void AArsenalCharacter::Look(const FInputActionValue& Value) {
 
 //////////////// EquipWeapon / ServerEquipWeapon ////////////////
 void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
-	if (!CombatComp || bIsEquipping) return;
-	
+	if (!CombatComp || bIsEquipping || CombatComp->SpawnedWeapon && CombatComp->SpawnedWeapon->WeaponType == WeaponType) return;
+
 	if (bIsReloading) {
 		if (HasAuthority()) {
 			GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
@@ -297,7 +297,7 @@ void AArsenalCharacter::EquipWeapon(EWeaponType WeaponType) {
 	if (HasAuthority()) {
 		ServerSetAttackType(EAttackType::EAT_Weapon);
 		CombatComp->EquipWeapon(WeaponType);
-		
+
 		bIsEquipping = true;
 		GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
 			bIsEquipping = false;
@@ -323,8 +323,10 @@ void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 		bIsReloading = false;
 	}
 	
-	if (UTextBlock* AmmoText = Cast<UTextBlock>(HUD->GetWidgetFromName("AmmoText"))) {
-		AmmoText->SetText(FText::FromString(""));
+	if (IsLocallyControlled() && HUD) {
+		if (UTextBlock* AmmoText = Cast<UTextBlock>(HUD->GetWidgetFromName("AmmoText"))) {
+			AmmoText->SetText(FText::FromString(""));
+		}
 	}
 
 	if (HasAuthority()) {
@@ -350,17 +352,17 @@ void AArsenalCharacter::Reload() {
 	if (bIsReloading || bIsEquipping) return;
 
 	if (HasAuthority()) {
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Server: Start Reload"));
 		bIsReloading = true;
+		
+		CombatComp->PlayReloadMontage();
         
 		GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, FTimerDelegate::CreateLambda([this]() {
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Server: End Reload"));
 			bIsReloading = false;
 			
 			if (CombatComp && CombatComp->SpawnedWeapon) {
 				CombatComp->SpawnedWeapon->Reload();
 			}
-		}), ReloadDelay, false);
+		}), CombatComp->GetReloadMontageLength(), false);
 	}
 	else {
 		bIsReloading = true; 

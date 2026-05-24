@@ -113,6 +113,8 @@ public:
 	UAnimMontage* ShootMontage;
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* EquipMontage;
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* ReloadMontage;
 	
 	UPROPERTY(EditDefaultsOnly)
 	int32 MagSize = 30;
