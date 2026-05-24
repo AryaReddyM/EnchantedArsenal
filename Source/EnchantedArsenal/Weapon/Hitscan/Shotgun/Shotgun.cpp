@@ -10,7 +10,9 @@ void AShotgun::Shoot() {
     if (!InstigatorPawn || !InstigatorPawn->IsLocallyControlled()) return;
 
     if (CurrentAmmo <= 0) {
-        if (InstigatorPawn->CombatComp) InstigatorPawn->CombatComp->Shoot(false);
+        if (InstigatorPawn->CombatComp) {
+            InstigatorPawn->CombatComp->StopShoot();
+        }
         return;
     }
 

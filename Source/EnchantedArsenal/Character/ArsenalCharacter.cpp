@@ -259,7 +259,7 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		// Shoot
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Started, this, &AArsenalCharacter::Shoot);
-		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AArsenalCharacter::ShootReleased);
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Completed, this, &AArsenalCharacter::StopShoot);
 	}
 }
 
@@ -385,20 +385,20 @@ void AArsenalCharacter::AimReleased() {
 	SetAiming(false);
 }
 
-//////////////// Shoot / ShootReleased ////////////////
+//////////////// Shoot / StopShoot ////////////////
 void AArsenalCharacter::Shoot() {
 	if (bIsEquipping) return;
-	
+
 	// Shoots for Corresponding Attack Type
 	switch (AttackType) {
 	case EAttackType::EAT_Weapon:
 		if (CombatComp && !bIsReloading) {
-			CombatComp->Shoot(true);
+			CombatComp->Shoot();
 		}
 		break;
 	case EAttackType::EAT_Magic:
 		if (MagicComp) {
-			MagicComp->Cast(true);
+			MagicComp->Cast();
 		}
 		break;
 	default:
@@ -406,21 +406,9 @@ void AArsenalCharacter::Shoot() {
 	}
 }
 
-void AArsenalCharacter::ShootReleased() {
-	// Stops Shooting for Corresponding Attack Type
-	switch (AttackType) {
-	case EAttackType::EAT_Weapon:
-		if (CombatComp) {
-			CombatComp->Shoot(false);
-		}
-		break;
-	case EAttackType::EAT_Magic:
-		if (MagicComp) {
-			MagicComp->Cast(false);
-		}
-		break;
-	default:
-		break;
+void AArsenalCharacter::StopShoot() {
+	if (CombatComp) {
+		CombatComp->StopShoot();
 	}
 }
 
@@ -542,9 +530,6 @@ void AArsenalCharacter::ServerSetAiming_Implementation(bool bInAiming) {
 //////////////// ServerSetAttackType ////////////////
 void AArsenalCharacter::ServerSetAttackType_Implementation(EAttackType NewType) {
 	if (AttackType == NewType) return;
-
-	if (CombatComp) CombatComp->Shoot(false);
-	if (MagicComp) MagicComp->Cast(false);
 
 	AttackType = NewType;
 

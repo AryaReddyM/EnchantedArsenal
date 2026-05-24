@@ -73,27 +73,38 @@ void UCombatComponent::UnequipWeapon() {
 	GetWorld()->GetTimerManager().ClearTimer(ShootTimer);
 }
 
-void UCombatComponent::Shoot(bool bTriggered) {
-	if (!SpawnedWeapon) return;
+void UCombatComponent::Shoot() {
+	if (!SpawnedWeapon || !Character) return;
 
-	if (bTriggered) {
-		GetWorld()->GetTimerManager().SetTimer(ShootTimer, FTimerDelegate::CreateLambda([this]() {
-			if (!SpawnedWeapon || !Character) return;
+	const float Now = GetWorld()->GetTimeSeconds();
+	if (Now - LastShootTime < SpawnedWeapon->ShootRate) return;
 
-			if (Character->IsLocallyControlled()) {
-				PlayShootMontage();
-			}
+	FireOneShot();
 
-			SpawnedWeapon->Shoot();
-
-			if (SpawnedWeapon->FireType == EFireType::EFT_SemiAuto) {
-				GetWorld()->GetTimerManager().ClearTimer(ShootTimer);
-			}
-		}), SpawnedWeapon->ShootRate, true, 0.0f);
+	if (SpawnedWeapon->FireType == EFireType::EFT_Auto) {
+		GetWorld()->GetTimerManager().SetTimer(
+			ShootTimer, this, &UCombatComponent::FireOneShot, SpawnedWeapon->ShootRate, true);
 	}
-	else {
-		GetWorld()->GetTimerManager().ClearTimer(ShootTimer);
+}
+
+void UCombatComponent::StopShoot() {
+	if (UWorld* World = GetWorld()) {
+		World->GetTimerManager().ClearTimer(ShootTimer);
 	}
+}
+
+void UCombatComponent::FireOneShot() {
+	if (!SpawnedWeapon || !Character) {
+		StopShoot();
+		return;
+	}
+
+	if (Character->IsLocallyControlled()) {
+		PlayShootMontage();
+	}
+
+	SpawnedWeapon->Shoot();
+	LastShootTime = GetWorld()->GetTimeSeconds();
 }
 
 void UCombatComponent::HandleAmmoChanged(int32 NewAmmo, int32 MagSize) {

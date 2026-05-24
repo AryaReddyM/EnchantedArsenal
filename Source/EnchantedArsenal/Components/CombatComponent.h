@@ -26,8 +26,10 @@ public:
 	void EquipWeapon(EWeaponType WeaponType);
 	void UnequipWeapon();
 
-	void Shoot(bool bTriggered);
-	
+	void Shoot();
+	void StopShoot();
+	void FireOneShot();
+
 	UFUNCTION()
 	void HandleAmmoChanged(int32 NewAmmo, int32 MagSize);
 	void ResetAmmo();
@@ -58,5 +60,6 @@ public:
 	TSubclassOf<AWeapon> SMG;
 
 	FTimerHandle ShootTimer;
+	float LastShootTime = -1000.f;
 	TMap<EWeaponType, int> AmmoReserve;
 };

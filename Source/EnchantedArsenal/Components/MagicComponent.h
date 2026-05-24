@@ -32,13 +32,13 @@ public:
 
 	void EquipSpell(ESpellType SpellType);
 	void UnequipSpell();
-	void Cast(bool bTriggered);
+	void Cast();
 
 	UFUNCTION(Server, Reliable)
-	void ServerCast(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
+	void ServerCast(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MultiCast(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
+	void MultiCast(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
 
 	bool IsSpellOnCooldown(ESpellType SpellType) const;
 

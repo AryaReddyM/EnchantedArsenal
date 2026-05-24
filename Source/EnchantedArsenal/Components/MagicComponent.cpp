@@ -53,8 +53,8 @@ void UMagicComponent::UnequipSpell() {
 	SpellData = nullptr;
 }
 
-void UMagicComponent::Cast(bool bTriggered) {
-	if (!bTriggered || !HeldSpell || CastState != ECastState::ECS_Idle) return;
+void UMagicComponent::Cast() {
+	if (!HeldSpell || CastState != ECastState::ECS_Idle) return;
 	if (IsSpellOnCooldown(EquippedSpellType)) return;
 
 	FVector SpawnLoc = HeldSpell->GetActorLocation();
@@ -62,10 +62,10 @@ void UMagicComponent::Cast(bool bTriggered) {
 	FVector Target = Hit.bBlockingHit ? Hit.ImpactPoint : Hit.TraceEnd;
 	FVector LaunchDir = (Target - SpawnLoc).GetSafeNormal();
 
-	ServerCast(true, SpawnLoc, LaunchDir);
+	ServerCast(SpawnLoc, LaunchDir);
 }
 
-void UMagicComponent::ServerCast_Implementation(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
+void UMagicComponent::ServerCast_Implementation(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
 	if (!HeldSpell || IsSpellOnCooldown(EquippedSpellType)) return;
 
 	ESpellType CastSpellType = EquippedSpellType;
@@ -79,10 +79,10 @@ void UMagicComponent::ServerCast_Implementation(bool bTriggered, FVector_NetQuan
 
 	if (GetCharacter()) GetCharacter()->AttackType = EAttackType::EAT_Unarmed;
 
-	MultiCast(bTriggered, LaunchLocation, LaunchDir);
+	MultiCast(LaunchLocation, LaunchDir);
 }
 
-void UMagicComponent::MultiCast_Implementation(bool bTriggered, FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
+void UMagicComponent::MultiCast_Implementation(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
 	if (!GetCharacter() || !HeldSpell) return;
 
 	HeldSpell->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);

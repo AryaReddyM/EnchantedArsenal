@@ -85,7 +85,7 @@ public:
 	void AimReleased();
 	
 	void Shoot();
-	void ShootReleased();
+	void StopShoot();
 
 	// Utility Functions
 	UFUNCTION()
