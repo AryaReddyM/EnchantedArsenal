@@ -79,6 +79,7 @@ void AArsenalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AArsenalCharacter, HealthComp);
 	DOREPLIFETIME(AArsenalCharacter, bIsAiming);
 	DOREPLIFETIME(AArsenalCharacter, AttackType);
+	DOREPLIFETIME(AArsenalCharacter, bIsReloading);
 }
 
 //////////////// Component Initialization ////////////////
@@ -365,9 +366,14 @@ void AArsenalCharacter::Reload() {
 		}), CombatComp->GetReloadMontageLength(), false);
 	}
 	else {
-		bIsReloading = true; 
-        
-		ServerReload(); 
+		bIsReloading = true;
+
+		// Play locally right away: the owning client pre-sets bIsReloading, so the
+		// server's replicated value matches and OnRep won't fire here. Predicting the
+		// montage also makes the reload feel responsive instead of waiting a round trip.
+		CombatComp->PlayReloadMontage();
+
+		ServerReload();
 	}
 }
 
@@ -408,7 +414,7 @@ void AArsenalCharacter::Shoot() {
 		}
 		break;
 	default:
-		break;
+		break; 
 	}
 }
 
@@ -682,11 +688,16 @@ void AArsenalCharacter::OnRep_PlayerState() {
 
 //////////////// OnRep_bIsReloading ////////////////
 void AArsenalCharacter::OnRep_bIsReloading() {
-	// Client visuals and shii
+	// Runs on every client that receives the replicated flag (owning + simulated
+	// proxies). The server plays/stops its own montage directly in Reload(), so it
+	// never gets here. This is what makes the reload anim visible on other clients.
+	if (!CombatComp) return;
+
 	if (bIsReloading) {
-		// Play reload montage / show UI progress bar
+		CombatComp->PlayReloadMontage();
 	}
 	else {
-		// Stop reload montage / hide UI progress bar
+		// Reload finished or was interrupted (e.g. weapon swap) — stop the anim.
+		CombatComp->StopReloadMontage();
 	}
 }

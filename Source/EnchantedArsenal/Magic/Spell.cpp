@@ -1,4 +1,5 @@
 #include "Spell.h"
+#include "Engine/Engine.h"
 #include "Net/UnrealNetwork.h"
 #include "SpellData.h"
 #include "Components/SphereComponent.h"
@@ -7,6 +8,8 @@
 #include "EnchantedArsenal/Components/MagicComponent.h"
 #include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
 #include "EnchantedArsenal/Magic/SpellData.h"
+#include "EnchantedArsenal/Magic/Base/BaseSpell.h"
+#include "EnchantedArsenal/Magic/Modifier/ModifierSpell.h"
 
 ASpell::ASpell() {
 	PrimaryActorTick.bCanEverTick = false;
@@ -28,6 +31,16 @@ ASpell::ASpell() {
 	Collision->SetGenerateOverlapEvents(true);
 	Collision->OnComponentHit.AddDynamic(this, &ASpell::OnHit);
 	Collision->OnComponentBeginOverlap.AddDynamic(this, &ASpell::OnBeginOverlap);
+
+	MergeCollision = CreateDefaultSubobject<USphereComponent>(TEXT("MergeCollision"));
+	MergeCollision->SetupAttachment(Collision);
+	MergeCollision->InitSphereRadius(200.0f);
+	MergeCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	MergeCollision->SetCollisionObjectType(ECC_WorldDynamic);
+	MergeCollision->SetCollisionResponseToAllChannels(ECR_Ignore);
+	MergeCollision->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+	MergeCollision->SetGenerateOverlapEvents(true);
+	MergeCollision->OnComponentBeginOverlap.AddDynamic(this, &ASpell::OnMergeOverlap);
 
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	MeshComp->SetupAttachment(Collision);
@@ -107,28 +120,32 @@ void ASpell::LaunchInDirection(const FVector& Dir) {
 }
 
 void ASpell::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
-	HandleSpellMerge(OtherActor);
 }
 
 void ASpell::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
+}
+
+void ASpell::OnMergeOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 	HandleSpellMerge(OtherActor);
 }
 
 void ASpell::HandleSpellMerge(AActor* OtherActor) {
-	if (!HasAuthority() || !OtherActor) return;
-	if (OtherActor == GetInstigator() || OtherActor == GetOwner()) return;
+	if (!HasAuthority()) return;
+	if (!OtherActor || OtherActor == this) return;
 
-	ASpell* OtherSpell = Cast<ASpell>(OtherActor);
-	if (!OtherSpell || !OtherSpell->Data) return;
+	ABaseSpell* Base = Cast<ABaseSpell>(this);
+	if (!Base) return;
 
-	if (!bIsHeld || OtherSpell->bIsHeld) return;
+	AModifierSpell* Modifier = Cast<AModifierSpell>(OtherActor);
+	if (!Modifier || !Modifier->Data) return;
 
-	// Don't combo with hostile spells — the flying spell should pass through and damage the caster.
-	if (AArsenalPlayerState::IsHostile(GetInstigator(), OtherSpell->GetInstigator())) return;
+	if (Modifier->bIsHeld) return;
 
-	SpellTags.AppendTags(OtherSpell->Data->ComboGrantTags);
+	if (AArsenalPlayerState::IsHostile(GetInstigator(), Modifier->GetInstigator())) return;
+
+	SpellTags.AppendTags(Modifier->Data->ComboGrantTags);
 	OnRep_SpellTags();
-	OtherSpell->Destroy();
+	Modifier->Destroy();
 }
 
 bool ASpell::IsEnemy(AActor* OtherActor) {

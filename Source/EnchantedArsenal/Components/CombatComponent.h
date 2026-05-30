@@ -37,6 +37,7 @@ public:
 	void PlayShootMontage();
 	void PlayEquipMontage();
 	void PlayReloadMontage();
+	void StopReloadMontage();
 	
 	float GetEquipMontageLength();
 	float GetReloadMontageLength();

@@ -5,9 +5,25 @@
 #include "SpellData.generated.h"
 
 class UStaticMesh;
-class UNiagaraSystem;
+class UFXSystemAsset;
+class UFXSystemComponent;
+class USceneComponent;
 class UMaterialInterface;
 class ASpell;
+
+USTRUCT(BlueprintType)
+struct FSpellFX {
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	UFXSystemAsset* System = nullptr;
+
+	bool IsSet() const { return System != nullptr; }
+
+	UFXSystemComponent* SpawnAtLocation(const UObject* WorldContext, FVector Location, FRotator Rotation = FRotator::ZeroRotator) const;
+
+	UFXSystemComponent* SpawnAttached(USceneComponent* Parent, FName Socket = NAME_None) const;
+};
 
 USTRUCT(BlueprintType)
 struct FTagModifier {
@@ -21,6 +37,9 @@ struct FTagModifier {
 	
 	UPROPERTY(EditDefaultsOnly)
 	UMaterialInterface* MaterialOverride = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly)
+	float BonusExplosionRadius = 0.0f;
 };
 
 UCLASS(BlueprintType)
@@ -37,10 +56,13 @@ public:
 	UMaterialInterface* Material = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Visuals")
-	UNiagaraSystem* TrailFX = nullptr;
+	FSpellFX TrailFX;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Visuals")
-	UNiagaraSystem* ImpactFX = nullptr;
+	FSpellFX ImpactFX;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Visuals")
+	FSpellFX HitImpactFX;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Stats")
 	float Cooldown = 1.0f;
@@ -54,6 +76,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Stats")
 	float Damage = 25.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Stats")
+	float ExplosionRadius = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stats", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float MinDamageMultiplier = 0.1f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Stats")
 	TArray<FTagModifier> TagModifiers;
@@ -68,5 +96,6 @@ public:
 	TSubclassOf<ASpell> Spell;
 
 	float GetDamage(const FGameplayTagContainer& ActiveTags) const;
+	float GetExplosionDamage(const FGameplayTagContainer& ActiveTags, float DistanceFromCenter) const;
 	UMaterialInterface* GetMaterial(const FGameplayTagContainer& ActiveTags) const;
 };

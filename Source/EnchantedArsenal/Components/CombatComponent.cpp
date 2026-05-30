@@ -161,6 +161,14 @@ void UCombatComponent::PlayReloadMontage() {
 	}
 }
 
+void UCombatComponent::StopReloadMontage() {
+	if (!Character || !SpawnedWeapon || !SpawnedWeapon->ReloadMontage) return;
+	UAnimInstance* AnimInstance = Character->GetMesh()->GetAnimInstance();
+	if (AnimInstance && AnimInstance->Montage_IsPlaying(SpawnedWeapon->ReloadMontage)) {
+		AnimInstance->Montage_Stop(0.2f, SpawnedWeapon->ReloadMontage);
+	}
+}
+
 float UCombatComponent::GetEquipMontageLength() {
 	if (!SpawnedWeapon || !SpawnedWeapon->EquipMontage) return 0.01f;
 	return FMath::Max(SpawnedWeapon->EquipMontage->GetPlayLength(), 0.01f);

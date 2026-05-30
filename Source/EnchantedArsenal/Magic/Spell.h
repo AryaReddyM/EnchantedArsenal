@@ -29,14 +29,19 @@ public:
 	UFUNCTION()
 	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION()
+	void OnMergeOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
 	void HandleSpellMerge(AActor* OtherActor);
 
 	UFUNCTION(BlueprintCallable, Category = "Magic")
 	bool IsEnemy(AActor* OtherActor);
 	
-	UPROPERTY(VisibleAnywhere) 
+	UPROPERTY(VisibleAnywhere)
 	USphereComponent* Collision;
-	UPROPERTY(VisibleAnywhere) 
+	UPROPERTY(VisibleAnywhere)
+	USphereComponent* MergeCollision;
+	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComp;
 	UPROPERTY(VisibleAnywhere) 
 	UProjectileMovementComponent* ProjComp;

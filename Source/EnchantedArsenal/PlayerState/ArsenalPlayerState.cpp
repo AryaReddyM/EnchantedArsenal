@@ -30,12 +30,16 @@ bool AArsenalPlayerState::IsHostile(AActor* Instigator, AActor* Other) {
 
 	APawn* InstigPawn = Cast<APawn>(Instigator);
 	APawn* OtherPawn = Cast<APawn>(Other);
-	if (!InstigPawn || !OtherPawn) return true;
+
+	// Non-Pawns (floor, walls, props) are never enemies.
+	if (!OtherPawn) return false;
 	if (InstigPawn == OtherPawn) return false;
 
-	AArsenalPlayerState* InstigPS = InstigPawn->GetPlayerState<AArsenalPlayerState>();
+	AArsenalPlayerState* InstigPS = InstigPawn ? InstigPawn->GetPlayerState<AArsenalPlayerState>() : nullptr;
 	AArsenalPlayerState* OtherPS = OtherPawn->GetPlayerState<AArsenalPlayerState>();
-	if (!InstigPS || !OtherPS) return false;
+
+	// A Pawn with no team affiliation (e.g. an AI enemy with no PlayerState) is treated as hostile.
+	if (!InstigPS || !OtherPS) return true;
 
 	return InstigPS->GetTeam() != OtherPS->GetTeam();
 }

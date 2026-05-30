@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnchantedArsenal/Magic/Spell.h"
+#include "EnchantedArsenal/Magic/Modifier/ModifierSpell.h"
 #include "Spiker.generated.h"
 
 UCLASS()
-class ENCHANTEDARSENAL_API ASpiker : public ASpell {
+class ENCHANTEDARSENAL_API ASpiker : public AModifierSpell {
 	GENERATED_BODY()
 
 public:
