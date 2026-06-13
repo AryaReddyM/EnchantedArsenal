@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Animation/AnimMontage.h"
 #include "MagicComponent.generated.h"
 
 class AArsenalCharacter;
@@ -35,10 +36,14 @@ public:
 	void Cast();
 
 	UFUNCTION(Server, Reliable)
-	void ServerCast(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
+	void ServerCast();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MultiCast(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
+	void MultiCast();
+
+	// Owning client sends the freshly-aimed launch params to the server when the notify fires.
+	UFUNCTION(Server, Reliable)
+	void ServerReleaseSpell(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
 
 	bool IsSpellOnCooldown(ESpellType SpellType) const;
 
@@ -48,6 +53,23 @@ public:
 	void AttachHeldSpell();
 	AArsenalCharacter* GetCharacter() const;
 	USpellData* GetSpellDataForType(ESpellType SpellType) const;
+	
+	void PlayCastMontage();
+
+	float GetCastMontageLength();
+
+	// Triggers a release once the "Cast Spell" montage notify is hit (deferred from MultiCast).
+	UFUNCTION()
+	void OnCastNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
+	// Safety net: releases the spell if the montage blends out without the notify ever firing.
+	void OnCastMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted);
+
+	// Owning-client side of release: recomputes current aim/location and asks the server to fire.
+	void RequestRelease();
+
+	// True between MultiCast and release; gates the notify so it only fires during an active cast.
+	bool bHasPendingCast = false;
 
 	UPROPERTY(Replicated)
 	ECastState CastState = ECastState::ECS_Idle;
@@ -73,7 +95,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spells")
 	USpellData* SpikeAdder;
 
-	// Server-only maps for cooldown logic
 	TMap<ESpellType, float> SpellCooldownDurations;
 	TMap<ESpellType, FTimerHandle> CooldownTimers;
 };

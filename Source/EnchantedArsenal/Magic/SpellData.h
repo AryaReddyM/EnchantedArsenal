@@ -97,5 +97,6 @@ public:
 
 	float GetDamage(const FGameplayTagContainer& ActiveTags) const;
 	float GetExplosionDamage(const FGameplayTagContainer& ActiveTags, float DistanceFromCenter) const;
+	float GetExplosionRadius(const FGameplayTagContainer& ActiveTags) const;
 	UMaterialInterface* GetMaterial(const FGameplayTagContainer& ActiveTags) const;
 };

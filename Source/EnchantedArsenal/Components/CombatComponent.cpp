@@ -100,9 +100,6 @@ void UCombatComponent::FireOneShot() {
 		return;
 	}
 
-	// Don't fire while reloading. Clearing the auto-fire timer means that even
-	// if the player keeps holding the trigger, the reload runs to completion
-	// instead of being repeatedly retriggered by the gun trying to shoot.
 	if (Character->bIsReloading) {
 		StopShoot();
 		return;

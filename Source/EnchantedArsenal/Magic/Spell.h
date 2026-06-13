@@ -61,4 +61,7 @@ public:
 	
 	UPROPERTY(Replicated)
 	bool bIsHeld = false;
+	
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* CastMontage;
 };

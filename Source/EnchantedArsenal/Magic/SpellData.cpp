@@ -39,10 +39,21 @@ float USpellData::GetDamage(const FGameplayTagContainer& ActiveTags) const {
 
 float USpellData::GetExplosionDamage(const FGameplayTagContainer& ActiveTags, float DistanceFromCenter) const {
 	const float Base = GetDamage(ActiveTags);
-	if (ExplosionRadius <= 0.0f) return Base;
+	if (GetExplosionRadius(ActiveTags) <= 0.0f) return Base;
 
-	const float Alpha = FMath::Clamp(DistanceFromCenter / ExplosionRadius, 0.0f, 1.0f);
+	const float Alpha = FMath::Clamp(DistanceFromCenter / GetExplosionRadius(ActiveTags), 0.0f, 1.0f);
 	return Base * FMath::Lerp(1.0f, MinDamageMultiplier, Alpha);
+}
+
+float USpellData::GetExplosionRadius(const FGameplayTagContainer& ActiveTags) const {
+	float Total = ExplosionRadius;
+	for (const FTagModifier& Mod : TagModifiers) {
+		if (ActiveTags.HasTag(Mod.Tag)) {
+			Total += Mod.BonusExplosionRadius;
+		}
+	}
+	
+	return Total;
 }
 
 UMaterialInterface* USpellData::GetMaterial(const FGameplayTagContainer& ActiveTags) const {

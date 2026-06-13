@@ -31,7 +31,7 @@ void ABoulder::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiv
 void ABoulder::Explode(AActor* DirectHitActor, const FVector& Origin) {
 	ShowBlast();
 
-	if (Data && Data->ExplosionRadius > 0.0f) {
+	if (Data && Data->GetExplosionRadius(SpellTags) > 0.0f) {
 		FCollisionObjectQueryParams ObjParams;
 		ObjParams.AddObjectTypesToQuery(ECC_Pawn);
 
@@ -40,7 +40,7 @@ void ABoulder::Explode(AActor* DirectHitActor, const FVector& Origin) {
 		QueryParams.AddIgnoredActor(GetInstigator());
 
 		TArray<FOverlapResult> Overlaps;
-		GetWorld()->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, ObjParams, FCollisionShape::MakeSphere(Data->ExplosionRadius), QueryParams);
+		GetWorld()->OverlapMultiByObjectType(Overlaps, Origin, FQuat::Identity, ObjParams, FCollisionShape::MakeSphere(Data->GetExplosionRadius(SpellTags)), QueryParams);
 
 		TSet<AActor*> AlreadyDamaged;
 		for (const FOverlapResult& Result : Overlaps) {
@@ -80,7 +80,7 @@ void ABoulder::Explode(AActor* DirectHitActor, const FVector& Origin) {
 void ABoulder::ShowBlast_Implementation() {
 	if (!Data) return;
 
-	DrawDebugSphere(GetWorld(), GetActorLocation(), Data->ExplosionRadius, 16, FColor::Red, false, 2.0f, 0, 2.0f);
+	DrawDebugSphere(GetWorld(), GetActorLocation(), Data->GetExplosionRadius(SpellTags), 16, FColor::Red, false, 2.0f, 0, 2.0f);
 
 	Data->ImpactFX.SpawnAtLocation(this, GetActorLocation());
 }

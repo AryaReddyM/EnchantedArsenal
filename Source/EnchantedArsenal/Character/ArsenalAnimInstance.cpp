@@ -92,7 +92,6 @@ void UArsenalAnimInstance::NativeUpdateAnimation(float DeltaSeconds) {
 	}
 
 	const bool bBlockedByCombat = (bShooting || bAiming);
-
 	if (bBlockedByCombat) {
 		bMovementHold = false;
 		TimeMoving = 0.f;
