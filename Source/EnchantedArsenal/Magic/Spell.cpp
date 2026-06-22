@@ -62,8 +62,8 @@ void ASpell::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 void ASpell::InitFromData() {
 	if (!Data) return;
 	SpellTags.AppendTags(Data->DefaultTags);
-	if (MeshComp && Data->Mesh) MeshComp->SetStaticMesh(Data->Mesh);
-	if (MeshComp && Data->Material) MeshComp->SetMaterial(0, Data->GetMaterial(SpellTags));
+	if (MeshComp && Data->GetMesh(SpellTags)) MeshComp->SetStaticMesh(Data->GetMesh(SpellTags));
+	if (MeshComp && Data->GetMaterial(SpellTags)) MeshComp->SetMaterial(0, Data->GetMaterial(SpellTags));
 	if (ProjComp) {
 		ProjComp->InitialSpeed = Data->InitialSpeed;
 		ProjComp->MaxSpeed = Data->Speed;
@@ -157,7 +157,11 @@ void ASpell::OnRep_Data() {
 }
 
 void ASpell::OnRep_SpellTags() {
-	if (MeshComp && Data && Data->Material) {
+	if (MeshComp && Data && Data->GetMaterial(SpellTags)) {
 		MeshComp->SetMaterial(0, Data->GetMaterial(SpellTags));
+	}
+	
+	if (MeshComp && Data && Data->GetMesh(SpellTags)) {
+		MeshComp->SetStaticMesh(Data->GetMesh(SpellTags));
 	}
 }

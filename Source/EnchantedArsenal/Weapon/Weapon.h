@@ -93,6 +93,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* ImpactSound;
+	
+	UPROPERTY(EditAnywhere)
+	USoundCue* MuzzleSound;
 
 	UPROPERTY(EditAnywhere)
 	float Damage;

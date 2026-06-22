@@ -61,7 +61,6 @@ void UMagicComponent::Cast() {
 	if (!HeldSpell || CastState != ECastState::ECS_Idle) return;
 	if (IsSpellOnCooldown(EquippedSpellType)) return;
 
-	// Aim is recomputed at release time (when the notify fires), so nothing is captured here.
 	ServerCast();
 }
 
@@ -82,7 +81,6 @@ void UMagicComponent::MultiCast_Implementation() {
 
 	PlayCastMontage();
 
-	// Fallback: with no cast montage there's no notify to wait for, so release immediately.
 	if (!HeldSpell->CastMontage) {
 		RequestRelease();
 	}
@@ -149,21 +147,16 @@ void UMagicComponent::OnCastNotifyBegin(FName NotifyName, const FBranchingPointN
 }
 
 void UMagicComponent::OnCastMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted) {
-	// If the notify never fired (renamed/removed, or the montage was cut short), release here so
-	// the held spell still launches and the casting state can't get stuck.
 	if (bHasPendingCast) {
 		RequestRelease();
 	}
 }
 
 void UMagicComponent::RequestRelease() {
-	// Only the controlling client has a valid crosshair trace; simulated proxies and the server
-	// (for a remote player) just wait for that client's ServerReleaseSpell.
 	if (!bHasPendingCast || !GetCharacter() || !GetCharacter()->IsLocallyControlled()) return;
 	bHasPendingCast = false;
 	if (!HeldSpell) return;
 
-	// Recompute from the CURRENT hand position and aim so moving/turning during the cast is honored.
 	const FVector SpawnLoc = HeldSpell->GetActorLocation();
 	const FHitResult Hit = GetCharacter()->TraceUnderCrosshairs();
 	const FVector Target = Hit.bBlockingHit ? Hit.ImpactPoint : Hit.TraceEnd;
@@ -173,7 +166,6 @@ void UMagicComponent::RequestRelease() {
 }
 
 void UMagicComponent::ServerReleaseSpell_Implementation(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
-	// Guard against duplicate/late releases (e.g. notify + blend-out both arriving).
 	if (CastState != ECastState::ECS_Casting || !HeldSpell) return;
 
 	HeldSpell->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
@@ -184,8 +176,6 @@ void UMagicComponent::ServerReleaseSpell_Implementation(FVector_NetQuantize Laun
 	HeldSpell = nullptr;
 	CastState = ECastState::ECS_Idle;
 
-	// Start the cooldown now that the spell has actually fired; the timer respawns the next held
-	// spell once it elapses.
 	const ESpellType CastSpellType = EquippedSpellType;
 	FTimerHandle& Handle = CooldownTimers.FindOrAdd(CastSpellType);
 	GetWorld()->GetTimerManager().SetTimer(Handle, [this, CastSpellType]() {

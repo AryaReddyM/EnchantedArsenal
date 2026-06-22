@@ -41,7 +41,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiCast();
 
-	// Owning client sends the freshly-aimed launch params to the server when the notify fires.
 	UFUNCTION(Server, Reliable)
 	void ServerReleaseSpell(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
 
@@ -58,17 +57,13 @@ public:
 
 	float GetCastMontageLength();
 
-	// Triggers a release once the "Cast Spell" montage notify is hit (deferred from MultiCast).
 	UFUNCTION()
 	void OnCastNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 
-	// Safety net: releases the spell if the montage blends out without the notify ever firing.
 	void OnCastMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted);
 
-	// Owning-client side of release: recomputes current aim/location and asks the server to fire.
 	void RequestRelease();
 
-	// True between MultiCast and release; gates the notify so it only fires during an active cast.
 	bool bHasPendingCast = false;
 
 	UPROPERTY(Replicated)

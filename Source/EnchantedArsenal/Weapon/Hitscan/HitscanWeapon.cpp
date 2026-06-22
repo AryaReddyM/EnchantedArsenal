@@ -119,6 +119,11 @@ void AHitscanWeapon::MulticastImpactEffects_Implementation(bool bHit, FVector_Ne
         const FVector MuzzleLoc = MuzzleSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashParticles, MuzzleLoc);
     }
+    
+    if (MuzzleSocket && MuzzleSound) {
+        const FVector MuzzleLoc = MuzzleSocket->GetSocketTransform(GetWeaponMesh()).GetLocation();
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), MuzzleSound, MuzzleLoc, 0.1f);
+    }
 
     if (bHit) {
         if (ImpactParticles) {
@@ -158,6 +163,10 @@ void AHitscanWeapon::LocalShootEffects(const FVector& TraceStart, const FVector&
 
     if (MuzzleFlashParticles) {
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlashParticles, TraceStart);
+    }
+    
+    if (MuzzleSound) {
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), MuzzleSound, TraceStart, 0.5f);
     }
 
     if (CrosshairHitResult.bBlockingHit) {

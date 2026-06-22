@@ -7,12 +7,12 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
 
-UFXSystemComponent* FSpellFX::SpawnAtLocation(const UObject* WorldContext, FVector Location, FRotator Rotation) const {
+UFXSystemComponent* FSpellFX::SpawnAtLocation(const UObject* WorldContext, FVector Location, FRotator Rotation, FVector Scale) const {
 	if (UNiagaraSystem* Niagara = Cast<UNiagaraSystem>(System)) {
-		return UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContext, Niagara, Location, Rotation);
+		return UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContext, Niagara, Location, Rotation, Scale);
 	}
 	if (UParticleSystem* Cascade = Cast<UParticleSystem>(System)) {
-		return UGameplayStatics::SpawnEmitterAtLocation(WorldContext, Cascade, Location, Rotation);
+		return UGameplayStatics::SpawnEmitterAtLocation(WorldContext, Cascade, Location, Rotation, Scale);
 	}
 	return nullptr;
 }
@@ -54,6 +54,16 @@ float USpellData::GetExplosionRadius(const FGameplayTagContainer& ActiveTags) co
 	}
 	
 	return Total;
+}
+
+UStaticMesh* USpellData::GetMesh(const FGameplayTagContainer& ActiveTags) const {
+	UStaticMesh* M = Mesh;
+	for (const FTagModifier& Mod : TagModifiers) {
+		if (ActiveTags.HasTag(Mod.Tag)) {
+			M = Mod.MeshOverride;
+		}
+	}
+	return M;
 }
 
 UMaterialInterface* USpellData::GetMaterial(const FGameplayTagContainer& ActiveTags) const {

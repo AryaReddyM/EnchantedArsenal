@@ -368,9 +368,6 @@ void AArsenalCharacter::Reload() {
 	else {
 		bIsReloading = true;
 
-		// Play locally right away: the owning client pre-sets bIsReloading, so the
-		// server's replicated value matches and OnRep won't fire here. Predicting the
-		// montage also makes the reload feel responsive instead of waiting a round trip.
 		CombatComp->PlayReloadMontage();
 
 		ServerReload();
@@ -688,16 +685,12 @@ void AArsenalCharacter::OnRep_PlayerState() {
 
 //////////////// OnRep_bIsReloading ////////////////
 void AArsenalCharacter::OnRep_bIsReloading() {
-	// Runs on every client that receives the replicated flag (owning + simulated
-	// proxies). The server plays/stops its own montage directly in Reload(), so it
-	// never gets here. This is what makes the reload anim visible on other clients.
 	if (!CombatComp) return;
 
 	if (bIsReloading) {
 		CombatComp->PlayReloadMontage();
 	}
 	else {
-		// Reload finished or was interrupted (e.g. weapon swap) — stop the anim.
 		CombatComp->StopReloadMontage();
 	}
 }

@@ -20,7 +20,7 @@ struct FSpellFX {
 
 	bool IsSet() const { return System != nullptr; }
 
-	UFXSystemComponent* SpawnAtLocation(const UObject* WorldContext, FVector Location, FRotator Rotation = FRotator::ZeroRotator) const;
+	UFXSystemComponent* SpawnAtLocation(const UObject* WorldContext, FVector Location, FRotator Rotation = FRotator::ZeroRotator, FVector Scale = FVector(1)) const;
 
 	UFXSystemComponent* SpawnAttached(USceneComponent* Parent, FName Socket = NAME_None) const;
 };
@@ -37,6 +37,9 @@ struct FTagModifier {
 	
 	UPROPERTY(EditDefaultsOnly)
 	UMaterialInterface* MaterialOverride = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly)
+	UStaticMesh* MeshOverride = nullptr;
 	
 	UPROPERTY(EditDefaultsOnly)
 	float BonusExplosionRadius = 0.0f;
@@ -98,5 +101,6 @@ public:
 	float GetDamage(const FGameplayTagContainer& ActiveTags) const;
 	float GetExplosionDamage(const FGameplayTagContainer& ActiveTags, float DistanceFromCenter) const;
 	float GetExplosionRadius(const FGameplayTagContainer& ActiveTags) const;
+	UStaticMesh* GetMesh(const FGameplayTagContainer& ActiveTags) const;
 	UMaterialInterface* GetMaterial(const FGameplayTagContainer& ActiveTags) const;
 };

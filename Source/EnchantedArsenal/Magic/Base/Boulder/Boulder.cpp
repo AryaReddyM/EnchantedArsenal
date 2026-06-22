@@ -4,6 +4,7 @@
 #include "EnchantedArsenal/Magic/SpellData.h"
 #include "Engine/OverlapResult.h"
 #include "DrawDebugHelpers.h"
+#include "NiagaraComponent.h"
 
 ABoulder::ABoulder() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -79,10 +80,17 @@ void ABoulder::Explode(AActor* DirectHitActor, const FVector& Origin) {
 
 void ABoulder::ShowBlast_Implementation() {
 	if (!Data) return;
+	
+	float TotalRadius = Data->GetExplosionRadius(SpellTags);
+	float BaseRadius = Data->ExplosionRadius;
+	float ScaleMultiplier = (BaseRadius > 0.0f) ? (TotalRadius / BaseRadius) : 1.0f;
 
-	DrawDebugSphere(GetWorld(), GetActorLocation(), Data->GetExplosionRadius(SpellTags), 16, FColor::Red, false, 2.0f, 0, 2.0f);
+	DrawDebugSphere(GetWorld(), GetActorLocation(), TotalRadius, 16, FColor::Red, false, 2.0f, 0, 2.0f);
 
-	Data->ImpactFX.SpawnAtLocation(this, GetActorLocation());
+	UFXSystemComponent* FXComp = Data->ImpactFX.SpawnAtLocation(this, GetActorLocation(), FRotator::ZeroRotator, FVector(ScaleMultiplier));
+	if (UNiagaraComponent* NiagaraComp = Cast<UNiagaraComponent>(FXComp)) {
+		NiagaraComp->SetVariableFloat(FName("Scale_All"), ScaleMultiplier);
+	}
 }
 
 void ABoulder::ShowImpactOnPawn_Implementation(FVector ImpactPoint, FVector ImpactNormal) {

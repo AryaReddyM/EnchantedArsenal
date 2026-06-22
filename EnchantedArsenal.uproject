@@ -27,10 +27,6 @@
 			]
 		},
 		{
-			"Name": "AIAssistant",
-			"Enabled": true
-		},
-		{
 			"Name": "OnlineSubsystemSteam",
 			"Enabled": false
 		},
