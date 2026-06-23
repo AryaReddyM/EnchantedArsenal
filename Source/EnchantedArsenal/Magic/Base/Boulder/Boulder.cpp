@@ -62,7 +62,7 @@ void ABoulder::Explode(AActor* DirectHitActor, const FVector& Origin) {
 					Distance = FVector::Dist(Origin, ImpactPoint);
 				}
 				const float ExplosionDamage = Data->GetExplosionDamage(SpellTags, Distance);
-				HealthComp->ApplyDamage(ExplosionDamage, GetOwner());
+				HealthComp->ApplyDamage(ExplosionDamage, GetInstigator());
 				
 				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, FString::Printf(TEXT("%s took %.1f explosion damage (dist %.1f)"), *OverlappedActor->GetName(), ExplosionDamage, Distance));                 
 				

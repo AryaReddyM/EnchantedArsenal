@@ -8,6 +8,9 @@
 #include "EnhancedInputComponent.h"
 #include "Alembic/AbcGeom/IFaceSet.h"
 #include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetBlueprintGeneratedClass.h"
+#include "Animation/WidgetAnimation.h"
+#include "Components/WidgetComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/InputComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -121,12 +124,11 @@ void AArsenalCharacter::BeginPlay() {
 		if (AArsenalGameState* GS = GetWorld()->GetGameState<AArsenalGameState>()) {
 			GS->OnTeamScoreChanged.AddDynamic(this, &AArsenalCharacter::HandleTeamScoreChanged);
 
-			// Catch up to the current score (in case we joined or respawned mid-match).
 			HandleTeamScoreChanged(ETeam::ET_BlueTeam, GS->BlueTeamScore);
 			HandleTeamScoreChanged(ETeam::ET_RedTeam,  GS->RedTeamScore);
 		}
 	}
-
+	
 	// Initialize PlayerState
 	ArsenalPlayerState = GetPlayerState<AArsenalPlayerState>();
 	if (ArsenalPlayerState) {
@@ -217,6 +219,29 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 			Bottom->SetRenderTranslation(FVector2D(0.f, CurrentVisualSpread));
 			Left->SetRenderTranslation(FVector2D(-CurrentVisualSpread, 0.f));
 			Right->SetRenderTranslation(FVector2D(CurrentVisualSpread, 0.f));
+		}
+	}
+	
+	// Damage Indicator
+	if (IsLocallyControlled() && CameraComp && ActiveDamageWidgets.Num() > 0) {
+		const FVector CameraLoc = CameraComp->GetComponentLocation();
+        
+		for (int i = ActiveDamageWidgets.Num() - 1; i >= 0; i--) {
+			UWidgetComponent* WidgetComp = ActiveDamageWidgets[i].Get();
+            
+			if (IsValid(WidgetComp)) {
+				if (!WidgetComp->IsVisible()) {
+					ActiveDamageWidgets.RemoveAt(i);
+					continue;
+				}
+
+				const FVector CompLoc = WidgetComp->GetComponentLocation();
+				FRotator TargetRot = (CameraLoc - CompLoc).Rotation();
+				WidgetComp->SetWorldRotation(TargetRot);
+			}
+			else {
+				ActiveDamageWidgets.RemoveAt(i);
+			}
 		}
 	}
 }
@@ -501,6 +526,63 @@ void AArsenalCharacter::HandleTeamScoreChanged(ETeam Team, float NewScore) {
 	if (UTextBlock* ScoreTextBlock = Cast<UTextBlock>(HUD->GetWidgetFromName(*WidgetName))) {
 		ScoreTextBlock->SetText(FText::Format(FText::FromString(LabelText), FMath::FloorToInt(NewScore)));
 	}
+}
+
+void AArsenalCharacter::ClientShowDamageIndicator_Implementation(AArsenalCharacter* Victim, float Damage) { 
+	if (!Victim) return; 
+
+    UUserWidget* Indicator = nullptr; 
+    UWidgetComponent* TargetWidgetComp = nullptr;
+    
+    TArray<UWidgetComponent*> WidgetComps; 
+    Victim->GetComponents<UWidgetComponent>(WidgetComps); 
+    
+    for (UWidgetComponent* WC : WidgetComps) { 
+        UUserWidget* W = WC ? WC->GetWidget() : nullptr; 
+        if (W && W->GetWidgetFromName(TEXT("DamageText"))) { 
+            Indicator = W; 
+            TargetWidgetComp = WC;
+            break; 
+        } 
+    } 
+
+    if (!Indicator || !TargetWidgetComp) return; 
+
+    TargetWidgetComp->SetWidgetSpace(EWidgetSpace::World);
+
+    if (IsLocallyControlled()) {
+        TargetWidgetComp->SetVisibility(true);
+        TargetWidgetComp->SetActive(true);
+        TargetWidgetComp->UpdateWidget();
+        
+        if (!ActiveDamageWidgets.Contains(TargetWidgetComp)) {
+            ActiveDamageWidgets.Add(TargetWidgetComp);
+        }
+    }
+	
+	const float Now = GetWorld()->GetTimeSeconds(); 
+    FDamageTally& Tally = DamageTallies.FindOrAdd(Victim); 
+    if (Now - Tally.LastTime > DamageAccumulateWindow) { 
+        Tally.Total = 0.f; 
+    } 
+    Tally.Total += Damage; 
+    Tally.LastTime = Now; 
+
+    if (UTextBlock* DamageText = Cast<UTextBlock>(Indicator->GetWidgetFromName(TEXT("DamageText")))) { 
+        DamageText->SetText(FText::AsNumber(FMath::RoundToInt(Tally.Total))); 
+    } 
+
+    if (UWidgetBlueprintGeneratedClass* WidgetClass = Cast<UWidgetBlueprintGeneratedClass>(Indicator->GetClass())) { 
+        for (UWidgetAnimation* Anim : WidgetClass->Animations) { 
+            if (!Anim) continue; 
+            FString AnimName = Anim->GetName(); 
+            AnimName.RemoveFromEnd(TEXT("_INST")); 
+            if (AnimName == TEXT("DamageAnimation")) { 
+                Indicator->PlayAnimation(Anim); 
+                break; 
+            } 
+        } 
+    }
 }
 
 void AArsenalCharacter::ResetPlayer(APlayerController* PC, APawn* Spectator) {

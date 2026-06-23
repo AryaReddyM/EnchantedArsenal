@@ -118,6 +118,9 @@ public:
 	UFUNCTION()
 	void HandleTeamScoreChanged(ETeam Team, float NewScore);
 
+	UFUNCTION(Client, Unreliable)
+	void ClientShowDamageIndicator(AArsenalCharacter* Victim, float Damage);
+
 	// Getters
 	AWeapon* GetWeapon();
 	bool IsWeaponEquipped();
@@ -230,7 +233,19 @@ public:
 	
 	// HUD
 	UPROPERTY(EditAnywhere)
-	UUserWidget* HUD; 
+	UUserWidget* HUD;
+	
+	// Damage Indicator
+	UPROPERTY(EditAnywhere)
+	UUserWidget* DamageIndicator;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float DamageAccumulateWindow = 1.0f;
+
+	struct FDamageTally { float Total = 0.f; float LastTime = 0.f; };
+	TMap<TWeakObjectPtr<AArsenalCharacter>, FDamageTally> DamageTallies;
+	
+	TArray<TWeakObjectPtr<class UWidgetComponent>> ActiveDamageWidgets;
 
 	// POV when Default
 	UPROPERTY(EditAnywhere, Category = "Aim")

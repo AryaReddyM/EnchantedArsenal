@@ -1,6 +1,7 @@
 #include "HealthComponent.h"
 #include "Components/ProgressBar.h"
 #include "Net/UnrealNetwork.h"
+#include "EnchantedArsenal/Character/ArsenalCharacter.h"
 
 void UHealthComponent::BeginPlay() {
 	Super::BeginPlay();
@@ -42,6 +43,11 @@ void UHealthComponent::ApplyDamage(float Damage, AActor* Damager) {
 	CurrentHealth = FMath::Max(0.f, CurrentHealth - Damage);
 
 	OnRep_CurrentHealth();
+
+	AArsenalCharacter* Victim = Cast<AArsenalCharacter>(GetOwner());
+	if (AArsenalCharacter* Attacker = Cast<AArsenalCharacter>(Damager)) {
+		Attacker->ClientShowDamageIndicator(Victim, Damage);
+	}
 
 	if (CurrentHealth <= 0) {
 		OnDeath.Broadcast(Damager);
