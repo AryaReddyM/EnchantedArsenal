@@ -64,8 +64,6 @@ void ABoulder::Explode(AActor* DirectHitActor, const FVector& Origin) {
 				const float ExplosionDamage = Data->GetExplosionDamage(SpellTags, Distance);
 				HealthComp->ApplyDamage(ExplosionDamage, GetInstigator());
 				
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, FString::Printf(TEXT("%s took %.1f explosion damage (dist %.1f)"), *OverlappedActor->GetName(), ExplosionDamage, Distance));                 
-				
 				FVector ImpactNormal = (ImpactPoint - Origin).GetSafeNormal();
 				if (ImpactNormal.IsNearlyZero()) {
 					ImpactNormal = (Origin - GetActorLocation()).GetSafeNormal();

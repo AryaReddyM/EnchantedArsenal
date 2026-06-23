@@ -554,6 +554,8 @@ void AArsenalCharacter::ClientShowDamageIndicator_Implementation(AArsenalCharact
         TargetWidgetComp->SetVisibility(true);
         TargetWidgetComp->SetActive(true);
         TargetWidgetComp->UpdateWidget();
+    	
+    	TargetWidgetComp->SetTranslucentSortPriority(10);
         
         if (!ActiveDamageWidgets.Contains(TargetWidgetComp)) {
             ActiveDamageWidgets.Add(TargetWidgetComp);
