@@ -40,6 +40,9 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiCast();
+	
+	UFUNCTION(Client, Reliable)
+	void ClientResetCastState();
 
 	UFUNCTION(Server, Reliable)
 	void ServerReleaseSpell(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir);
@@ -54,8 +57,10 @@ public:
 	USpellData* GetSpellDataForType(ESpellType SpellType) const;
 	
 	void PlayCastMontage();
-
+	void PlayEquipMontage();
+	
 	float GetCastMontageLength();
+	float GetEquipMontageLength();
 
 	UFUNCTION()
 	void OnCastNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);

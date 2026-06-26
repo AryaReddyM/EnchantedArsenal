@@ -168,6 +168,7 @@ void UCombatComponent::StopReloadMontage() {
 
 float UCombatComponent::GetEquipMontageLength() {
 	if (!SpawnedWeapon || !SpawnedWeapon->EquipMontage) return 0.01f;
+	
 	return FMath::Max(SpawnedWeapon->EquipMontage->GetPlayLength(), 0.01f);
 }
 

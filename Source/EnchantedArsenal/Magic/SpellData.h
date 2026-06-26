@@ -97,6 +97,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Classes")
 	TSubclassOf<ASpell> Spell;
+	
+	UPROPERTY(EditAnywhere, Category = "Animations")
+	UAnimMontage* CastMontage;
+	UPROPERTY(EditAnywhere, Category = "Animations")
+	UAnimMontage* EquipMontage;
 
 	float GetDamage(const FGameplayTagContainer& ActiveTags) const;
 	float GetExplosionDamage(const FGameplayTagContainer& ActiveTags, float DistanceFromCenter) const;

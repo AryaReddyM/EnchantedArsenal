@@ -242,7 +242,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float DamageAccumulateWindow = 1.0f;
 
-	struct FDamageTally { float Total = 0.f; float LastTime = 0.f; };
+	// Damage Tally for Indicator
+	struct FDamageTally {
+		float Total = 0.f; 
+		float LastTime = 0.f;
+	};
 	TMap<TWeakObjectPtr<AArsenalCharacter>, FDamageTally> DamageTallies;
 	
 	TArray<TWeakObjectPtr<class UWidgetComponent>> ActiveDamageWidgets;
@@ -309,7 +313,6 @@ public:
 	
 	// Equip
 	bool bIsEquipping = false;
-	float EquipDelay = 2.0f;
 	FTimerHandle EquipTimerHandle;
 	
 	// Reload

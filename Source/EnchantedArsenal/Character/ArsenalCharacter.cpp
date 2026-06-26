@@ -362,7 +362,7 @@ void AArsenalCharacter::EquipSpell(ESpellType SpellType) {
 		bIsEquipping = true;
 		GetWorldTimerManager().SetTimer(EquipTimerHandle, FTimerDelegate::CreateLambda([this]() {
 			bIsEquipping = false;
-		}), EquipDelay, false);
+		}), MagicComp->GetEquipMontageLength(), false);
 	}
 	else {
 		ServerEquipSpell(SpellType);

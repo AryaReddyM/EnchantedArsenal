@@ -43,6 +43,8 @@ void UMagicComponent::EquipSpell(ESpellType SpellType) {
 	if (!IsSpellOnCooldown(SpellType)) {
 		SpawnHeldSpell();
 	}
+	
+	PlayEquipMontage();
 }
 
 void UMagicComponent::UnequipSpell() {
@@ -58,32 +60,45 @@ void UMagicComponent::UnequipSpell() {
 }
 
 void UMagicComponent::Cast() {
-	if (!HeldSpell || CastState != ECastState::ECS_Idle) return;
+	if (!HeldSpell || CastState != ECastState::ECS_Idle || bHasPendingCast) return;
 	if (IsSpellOnCooldown(EquippedSpellType)) return;
+
+	bHasPendingCast = true; 
 
 	ServerCast();
 }
 
 void UMagicComponent::ServerCast_Implementation() {
-	if (!HeldSpell || IsSpellOnCooldown(EquippedSpellType) || CastState != ECastState::ECS_Idle) return;
+	if (!HeldSpell || IsSpellOnCooldown(EquippedSpellType) || CastState != ECastState::ECS_Idle) {
+		ClientResetCastState();
+		return;
+	}
 
 	CastState = ECastState::ECS_Casting;
-
-	if (GetCharacter()) GetCharacter()->AttackType = EAttackType::EAT_Unarmed;
-
+    
+	if (GetCharacter()) {
+		GetCharacter()->AttackType = EAttackType::EAT_Unarmed;
+	}
+    
 	MultiCast();
 }
 
 void UMagicComponent::MultiCast_Implementation() {
-	if (!GetCharacter() || !HeldSpell) return;
+	if (!GetCharacter()) return;
+
+	ASpell* LocalHeldSpell = HeldSpell;
+	if (!LocalHeldSpell) return;
 
 	bHasPendingCast = true;
-
 	PlayCastMontage();
 
-	if (!HeldSpell->CastMontage) {
+	if (!LocalHeldSpell->Data || !LocalHeldSpell->Data->CastMontage) {
 		RequestRelease();
 	}
+}
+
+void UMagicComponent::ClientResetCastState_Implementation() {
+	bHasPendingCast = false;
 }
 
 void UMagicComponent::SpawnHeldSpell() {
@@ -121,23 +136,50 @@ USpellData* UMagicComponent::GetSpellDataForType(ESpellType SpellType) const {
 	return nullptr;
 }
 
-void UMagicComponent::PlayCastMontage() {
-	if (!GetCharacter() || !HeldSpell || !HeldSpell->CastMontage) return;
-	UAnimInstance* AnimInstance = GetCharacter()->GetMesh()->GetAnimInstance();
-	if (!AnimInstance) return;
+void UMagicComponent::PlayCastMontage() { 
+	if (!GetCharacter()) return;
+
+	ASpell* LocalHeldSpell = HeldSpell;
+	if (!LocalHeldSpell || !LocalHeldSpell->Data || !LocalHeldSpell->Data->CastMontage) return;
+
+	UAnimMontage* MontageToPlay = LocalHeldSpell->Data->CastMontage;
+	if (!MontageToPlay) return;
+
+	USkeletalMeshComponent* Mesh = GetCharacter()->GetMesh();
+	if (!Mesh) return;
+
+	UAnimInstance* AnimInstance = Mesh->GetAnimInstance();
+	if (!AnimInstance || !::IsValid(AnimInstance)) return;
 
 	AnimInstance->OnPlayMontageNotifyBegin.AddUniqueDynamic(this, &UMagicComponent::OnCastNotifyBegin);
 
-	if (AnimInstance->Montage_Play(HeldSpell->CastMontage) > 0.f) {
+	const float SectionLength = AnimInstance->Montage_Play(MontageToPlay);
+
+	if (SectionLength > 0.f && ::IsValid(AnimInstance)) {
 		FOnMontageBlendingOutStarted BlendOut;
 		BlendOut.BindUObject(this, &UMagicComponent::OnCastMontageBlendingOut);
-		AnimInstance->Montage_SetBlendingOutDelegate(BlendOut, HeldSpell->CastMontage);
+		AnimInstance->Montage_SetBlendingOutDelegate(BlendOut, MontageToPlay);
+	}
+}
+
+void UMagicComponent::PlayEquipMontage() {
+	if (!GetCharacter() || !HeldSpell || !HeldSpell->Data || !HeldSpell->Data->EquipMontage) return;
+	UAnimInstance* AnimInstance = GetCharacter()->GetMesh()->GetAnimInstance();
+	if (AnimInstance && !AnimInstance->Montage_IsPlaying(HeldSpell->Data->EquipMontage)) {
+		AnimInstance->Montage_Play(HeldSpell->Data->EquipMontage);
 	}
 }
 
 float UMagicComponent::GetCastMontageLength() {
-	if (!HeldSpell || !HeldSpell->CastMontage) return 0.01f;
-	return FMath::Max(HeldSpell->CastMontage->GetPlayLength(), 0.01f);
+	if (!HeldSpell || !HeldSpell->Data || !HeldSpell->Data->CastMontage) return 0.01f;
+	
+	return FMath::Max(HeldSpell->Data->CastMontage->GetPlayLength(), 0.01f);
+}
+
+float UMagicComponent::GetEquipMontageLength() {
+	if (!HeldSpell || !HeldSpell->Data || !HeldSpell->Data->CastMontage) return 0.01f;
+	
+	return FMath::Max(HeldSpell->Data->CastMontage->GetPlayLength(), 0.01f);
 }
 
 void UMagicComponent::OnCastNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload) {
@@ -195,5 +237,7 @@ void UMagicComponent::OnRep_HeldSpell() {
 		HeldSpell->SetHeldMode(true);
 		HeldSpell->CollisionIgnoreOwner();
 		AttachHeldSpell();
+		
+		PlayEquipMontage();
 	}
 }
