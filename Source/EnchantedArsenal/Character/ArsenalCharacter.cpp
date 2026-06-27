@@ -308,7 +308,6 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		// Spell Equips
 		EnhancedInputComponent->BindAction(OpenSpellWheelAction, ETriggerEvent::Started, this, &AArsenalCharacter::OpenSpellWheel);
 		EnhancedInputComponent->BindAction(OpenSpellWheelAction, ETriggerEvent::Completed, this, &AArsenalCharacter::CloseSpellWheel);
-		EnhancedInputComponent->BindAction(CastSelectedSpellAction, ETriggerEvent::Started, this, &AArsenalCharacter::CastSelectedSpell);
 		
 		// Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AArsenalCharacter::Reload);
@@ -480,7 +479,7 @@ void AArsenalCharacter::StopShoot() {
 	}
 }
 
-//////////////// OpenSpellWheel / CastSelectedSpell ////////////////
+//////////////// OpenSpellWheel / CloseSpellWheel ////////////////
 
 void AArsenalCharacter::OpenSpellWheel()
 {
@@ -551,9 +550,6 @@ void AArsenalCharacter::CloseSpellWheel() {
 	if (SpellLocationOnWheel.Contains(CurrAngle)) {
 		EquipSpell(SpellLocationOnWheel[CurrAngle]);
 	}
-}
-
-void AArsenalCharacter::CastSelectedSpell() {
 }
 
 ////////////////////////////////////// Utility Functions //////////////////////////////////////

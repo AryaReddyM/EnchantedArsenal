@@ -89,7 +89,6 @@ public:
 	
 	void OpenSpellWheel();
 	void CloseSpellWheel();
-	void CastSelectedSpell();
 
 	// Utility Functions
 	UFUNCTION()
@@ -216,10 +215,6 @@ public:
 	// Open Spell Wheel
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* OpenSpellWheelAction;
-
-	// Cast Selected Spell
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* CastSelectedSpellAction;
 
 	// Aim
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
