@@ -102,6 +102,9 @@ public:
 	UAnimMontage* CastMontage;
 	UPROPERTY(EditAnywhere, Category = "Animations")
 	UAnimMontage* EquipMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Visuals")
+	UTexture2D* Icon;
 
 	float GetDamage(const FGameplayTagContainer& ActiveTags) const;
 	float GetExplosionDamage(const FGameplayTagContainer& ActiveTags, float DistanceFromCenter) const;

@@ -10,6 +10,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintGeneratedClass.h"
 #include "Animation/WidgetAnimation.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/WidgetComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/InputComponent.h"
@@ -20,6 +21,7 @@
 #include "EnchantedArsenal/Magic/Spell.h"
 #include "EnchantedArsenal/Components/CombatComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -72,6 +74,11 @@ AArsenalCharacter::AArsenalCharacter() {
 
 	HeadshotBoxCollisionComp = CreateDefaultSubobject<UBoxComponent>(TEXT("Headshot Box Collision Component"));
 	HeadshotBoxCollisionComp->SetupAttachment(CapsuleComp);
+	
+	SpellLocationOnWheel = {
+		{0, ESpellType::EST_Boulder},
+		{45, ESpellType::EST_SpikeAdder}
+	};
 }
 
 //////////////// Replication ////////////////
@@ -244,6 +251,32 @@ void AArsenalCharacter::Tick(float DeltaTime) {
 			}
 		}
 	}
+	
+	// Spell Wheel
+	if (SpellWheel) {
+		APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+		if (PC) {
+			FVector2D MousePos;
+			PC->GetMousePosition(MousePos.X, MousePos.Y);
+		
+			FVector2D CenterOffset = MousePos - UWidgetLayoutLibrary::GetViewportSize(GetWorld()) / 2;
+			
+			float Radians = FMath::Atan2(CenterOffset.Y, CenterOffset.X);
+			float Degrees = FMath::RadiansToDegrees(Radians);
+			
+			Degrees += 90.0f;
+			if (Degrees < 0) Degrees += 360.0f;
+			
+			CurrAngle = FMath::RoundToInt(Degrees / 45.0f) * 45;
+			
+			if (CurrAngle == 360) CurrAngle = 0;
+		
+			if (UImage* RedLine = Cast<UImage>(SpellWheel->GetWidgetFromName("RedLine"))) {
+				RedLine->SetRenderTransformAngle(CurrAngle);
+			}
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, FString::Printf(TEXT("Angle: %d"), CurrAngle));
+		}
+	}
 }
 
 void AArsenalCharacter::PossessedBy(AController* NewController) {
@@ -273,8 +306,9 @@ void AArsenalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(EquipPistolAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipWeapon, EWeaponType::EWT_Pistol);
 
 		// Spell Equips
-		EnhancedInputComponent->BindAction(EquipBoulderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_Boulder);
-		EnhancedInputComponent->BindAction(EquipSpikerAdderAction, ETriggerEvent::Started, this, &AArsenalCharacter::EquipSpell, ESpellType::EST_SpikeAdder);
+		EnhancedInputComponent->BindAction(OpenSpellWheelAction, ETriggerEvent::Started, this, &AArsenalCharacter::OpenSpellWheel);
+		EnhancedInputComponent->BindAction(OpenSpellWheelAction, ETriggerEvent::Completed, this, &AArsenalCharacter::CloseSpellWheel);
+		EnhancedInputComponent->BindAction(CastSelectedSpellAction, ETriggerEvent::Started, this, &AArsenalCharacter::CastSelectedSpell);
 		
 		// Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AArsenalCharacter::Reload);
@@ -444,6 +478,82 @@ void AArsenalCharacter::StopShoot() {
 	if (CombatComp) {
 		CombatComp->StopShoot();
 	}
+}
+
+//////////////// OpenSpellWheel / CastSelectedSpell ////////////////
+
+void AArsenalCharacter::OpenSpellWheel()
+{
+    SpellWheel = CreateWidget<UUserWidget>(GetWorld(), SpellWheelRef, "SpellWheel");
+    if (!SpellWheel) return;
+
+    SpellWheel->AddToViewport();
+
+    TArray<int32> AngleOrder = {0, 45, 90, 135, 180, 225, 270, 315};
+
+    float Radius = 370.0f; 
+    TArray<FVector2D> SlotOffsets;
+    SlotOffsets.Add(FVector2D(0.0f, -Radius));
+    SlotOffsets.Add(FVector2D(Radius * 0.707f, -Radius * 0.707f));
+    SlotOffsets.Add(FVector2D(Radius, 0.0f));
+    SlotOffsets.Add(FVector2D(Radius * 0.707f, Radius * 0.707f));
+    SlotOffsets.Add(FVector2D(0.0f, Radius));
+    SlotOffsets.Add(FVector2D(-Radius * 0.707f, Radius * 0.707f));
+    SlotOffsets.Add(FVector2D(-Radius, 0.0f));
+    SlotOffsets.Add(FVector2D(-Radius * 0.707f, -Radius * 0.707f));
+
+    for (int32 i = 0; i < 8; ++i) {
+        int32 TargetAngle = AngleOrder[i];
+        
+		FString IconWidgetName = FString::Printf(TEXT("Icon%d"), i + 1);
+        UImage* FoundIconImage = Cast<UImage>(SpellWheel->GetWidgetFromName(*IconWidgetName));
+
+        if (SpellLocationOnWheel.Contains(TargetAngle)) {
+            ESpellType ConfiguredType = SpellLocationOnWheel[TargetAngle];
+            UTexture2D* SpellTexture = nullptr;
+
+            if (MagicComp) {
+                SpellTexture = MagicComp->GetSpellIconForType(ConfiguredType);
+            }
+
+            if (FoundIconImage && SpellTexture) {
+                FoundIconImage->SetBrushFromTexture(SpellTexture);
+                FoundIconImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+                if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(FoundIconImage->Slot)) {
+                    CanvasSlot->SetPosition(SlotOffsets[i]);
+                }
+                continue; 
+            }
+        }
+
+        if (FoundIconImage) {
+            FoundIconImage->SetVisibility(ESlateVisibility::Collapsed);
+        }
+    }
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (!PC) return;
+    PC->SetShowMouseCursor(true);
+    FVector2D HalfViewportSize = UWidgetLayoutLibrary::GetViewportSize(GetWorld()) / 2.0f;
+    PC->SetMouseLocation(FMath::TruncToInt(HalfViewportSize.X), FMath::TruncToInt(HalfViewportSize.Y));
+}
+
+void AArsenalCharacter::CloseSpellWheel() {
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (PC) {
+		PC->SetShowMouseCursor(false);
+	}
+	
+	if (SpellWheel) SpellWheel->RemoveFromParent();
+	SpellWheel = nullptr;
+	
+	if (SpellLocationOnWheel.Contains(CurrAngle)) {
+		EquipSpell(SpellLocationOnWheel[CurrAngle]);
+	}
+}
+
+void AArsenalCharacter::CastSelectedSpell() {
 }
 
 ////////////////////////////////////// Utility Functions //////////////////////////////////////

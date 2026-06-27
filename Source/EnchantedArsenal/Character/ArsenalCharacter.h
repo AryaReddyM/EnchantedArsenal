@@ -86,6 +86,10 @@ public:
 	
 	void Shoot();
 	void StopShoot();
+	
+	void OpenSpellWheel();
+	void CloseSpellWheel();
+	void CastSelectedSpell();
 
 	// Utility Functions
 	UFUNCTION()
@@ -189,8 +193,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 
-	////// Weapons //////
-	
 	// Equip Rifle
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* EquipRifleAction;
@@ -211,15 +213,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ReloadAction;
 
-	////// Spells //////
-
-	// Equip Boulder
+	// Open Spell Wheel
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* EquipBoulderAction;
+	UInputAction* OpenSpellWheelAction;
 
-	// Equip Spiker Adder
+	// Cast Selected Spell
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* EquipSpikerAdderAction;
+	UInputAction* CastSelectedSpellAction;
 
 	// Aim
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -330,4 +330,11 @@ public:
 	// Physics Animation
 	UPROPERTY(EditAnywhere, Category = "Ragdoll")
 	UPhysicsData* PhysicsData;
+	
+	// Spell Selection
+	UPROPERTY(EditAnywhere, Category = "Spells")
+	TSubclassOf<UUserWidget> SpellWheelRef;
+	UUserWidget* SpellWheel;
+	int CurrAngle = 0;
+	TMap<int, ESpellType> SpellLocationOnWheel;
 };

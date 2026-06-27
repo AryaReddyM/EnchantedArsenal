@@ -101,6 +101,27 @@ void UMagicComponent::ClientResetCastState_Implementation() {
 	bHasPendingCast = false;
 }
 
+void UMagicComponent::ServerReleaseSpell_Implementation(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
+	if (CastState != ECastState::ECS_Casting || !HeldSpell) return;
+
+	HeldSpell->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HeldSpell->SetActorLocationAndRotation(LaunchLocation, LaunchDir.Rotation());
+	HeldSpell->CollisionIgnoreOwner();
+	HeldSpell->SetHeldMode(false);
+	HeldSpell->LaunchInDirection(LaunchDir);
+	HeldSpell = nullptr;
+	CastState = ECastState::ECS_Idle;
+
+	const ESpellType CastSpellType = EquippedSpellType;
+	FTimerHandle& Handle = CooldownTimers.FindOrAdd(CastSpellType);
+	GetWorld()->GetTimerManager().SetTimer(Handle, [this, CastSpellType]() {
+		if (EquippedSpellType == CastSpellType && !HeldSpell) {
+			SpawnHeldSpell();
+			if (GetCharacter()) GetCharacter()->AttackType = EAttackType::EAT_Magic;
+		}
+	}, SpellCooldownDurations.FindRef(CastSpellType), false);
+}
+
 void UMagicComponent::SpawnHeldSpell() {
 	if (!GetCharacter() || !GetCharacter()->HasAuthority() || !SpellData) return;
 
@@ -182,6 +203,10 @@ float UMagicComponent::GetEquipMontageLength() {
 	return FMath::Max(HeldSpell->Data->CastMontage->GetPlayLength(), 0.01f);
 }
 
+UTexture2D* UMagicComponent::GetSpellIconForType(ESpellType Type) {
+	return GetSpellDataForType(Type)->Icon;
+}
+
 void UMagicComponent::OnCastNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload) {
 	if (NotifyName == FName(TEXT("Cast Spell"))) {
 		RequestRelease();
@@ -205,27 +230,6 @@ void UMagicComponent::RequestRelease() {
 	const FVector LaunchDir = (Target - SpawnLoc).GetSafeNormal();
 
 	ServerReleaseSpell(SpawnLoc, LaunchDir);
-}
-
-void UMagicComponent::ServerReleaseSpell_Implementation(FVector_NetQuantize LaunchLocation, FVector_NetQuantizeNormal LaunchDir) {
-	if (CastState != ECastState::ECS_Casting || !HeldSpell) return;
-
-	HeldSpell->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	HeldSpell->SetActorLocationAndRotation(LaunchLocation, LaunchDir.Rotation());
-	HeldSpell->CollisionIgnoreOwner();
-	HeldSpell->SetHeldMode(false);
-	HeldSpell->LaunchInDirection(LaunchDir);
-	HeldSpell = nullptr;
-	CastState = ECastState::ECS_Idle;
-
-	const ESpellType CastSpellType = EquippedSpellType;
-	FTimerHandle& Handle = CooldownTimers.FindOrAdd(CastSpellType);
-	GetWorld()->GetTimerManager().SetTimer(Handle, [this, CastSpellType]() {
-		if (EquippedSpellType == CastSpellType && !HeldSpell) {
-			SpawnHeldSpell();
-			if (GetCharacter()) GetCharacter()->AttackType = EAttackType::EAT_Magic;
-		}
-	}, SpellCooldownDurations.FindRef(CastSpellType), false);
 }
 
 void UMagicComponent::OnRep_EquippedSpellType() {

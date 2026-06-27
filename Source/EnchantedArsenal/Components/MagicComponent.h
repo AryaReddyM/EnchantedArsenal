@@ -61,6 +61,8 @@ public:
 	
 	float GetCastMontageLength();
 	float GetEquipMontageLength();
+	
+	UTexture2D* GetSpellIconForType(ESpellType Type);
 
 	UFUNCTION()
 	void OnCastNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
