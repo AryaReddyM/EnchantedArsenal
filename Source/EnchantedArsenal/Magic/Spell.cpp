@@ -8,8 +8,6 @@
 #include "EnchantedArsenal/Components/MagicComponent.h"
 #include "EnchantedArsenal/PlayerState/ArsenalPlayerState.h"
 #include "EnchantedArsenal/Magic/SpellData.h"
-#include "EnchantedArsenal/Magic/Base/BaseSpell.h"
-#include "EnchantedArsenal/Magic/Modifier/ModifierSpell.h"
 
 ASpell::ASpell() {
 	PrimaryActorTick.bCanEverTick = false;

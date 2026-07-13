@@ -5,3 +5,6 @@
 UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Base_Boulder);
 UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Base_SpikeAdder);
 UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Modifier_Spiked);
+
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Behavior_ReceivesModifiers);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Spell_Behavior_AppliesModifiers);

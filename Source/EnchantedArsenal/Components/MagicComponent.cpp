@@ -154,6 +154,7 @@ AArsenalCharacter* UMagicComponent::GetCharacter() const {
 USpellData* UMagicComponent::GetSpellDataForType(ESpellType SpellType) const {
 	if (SpellType == ESpellType::EST_Boulder) return Boulder;
 	if (SpellType == ESpellType::EST_SpikeAdder) return SpikeAdder;
+	if (SpellType == ESpellType::EST_FireWall) return FireWall;
 	return nullptr;
 }
 

@@ -14,6 +14,7 @@ enum class ESpellType : uint8 {
 	EST_None UMETA(DisplayName = "None"),
 	EST_Boulder UMETA(DisplayName = "Boulder"),
 	EST_SpikeAdder UMETA(DisplayName = "Spike Adder"),
+	EST_FireWall UMETA(DisplayName = "Fire Wall"),
 	EST_MAX UMETA(DisplayName = "DefaultMax")
 };
 
@@ -96,6 +97,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Spells")
 	USpellData* SpikeAdder;
+	
+	UPROPERTY(EditAnywhere, Category = "Spells")
+	USpellData* FireWall;
 
 	TMap<ESpellType, float> SpellCooldownDurations;
 	TMap<ESpellType, FTimerHandle> CooldownTimers;
